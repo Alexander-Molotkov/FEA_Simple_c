@@ -8,9 +8,9 @@
 
 using namespace std;
 
-vector< vector<float> > matrix_mult(vector< vector<float> > &m1, vector< vector<float> > &m2);
 vector< vector<float> > upper_triangular(vector< vector<float> > &m1);
 vector< vector<float> > matrix_transpose(vector < vector<float> >& m1);
+vector<vector<float>> matrix_multiply(vector<vector<float>>& m1, vector<vector<float>>& m2);
 
 void build_nodes(vector< vector<float> > &NODES);
 void build_elems(vector< vector<float> > &ELEMS);
@@ -156,7 +156,8 @@ int main() {
 		kff.push_back(temp);
 	}
 
-	//FOR DEBUG
+	//FOR DEBUG 
+	/*
 	vector < vector<float> > TEST;
 	for (int i = 0; i < 5; i++) {
 		vector<float> temp;
@@ -166,10 +167,23 @@ int main() {
 			TEST[i].push_back(i + j);
 		}
 	}
+	vector < vector<float> > TEST2;
+	for (int i = 0; i < 5; i++) {
+		vector<float> temp;
+		TEST2.push_back(temp);
+		
+		for (int j = 0; j < 5; j++) {
+			TEST2[i].push_back(i + j);
+		}
+	}
+
 
 	debug(TEST);
 	debug(upper_triangular(TEST));
-	//END DEBUG
+
+	debug( matrix_multiply(TEST, TEST2) );
+	*/
+	//END DEBUG 
 
 	//Calculation
 	for (int e = 0; e < nele; e++) {
@@ -231,7 +245,8 @@ int main() {
 
 
 		//Local Displacements
-
+		vector<float> ul(6, 0);
+		ul = matrix_multiply(alg, u);
 
 
 	}
@@ -239,15 +254,6 @@ int main() {
 	//debug(kff);
 
 	return 0;
-}
-
-vector< vector<float> > matrix_mult(vector< vector<float> > &m1, vector< vector<float> > &m2){
-	
-
-	vector< vector<float> > m3;
-
-
-	return m3;
 }
 
 vector< vector<float> > upper_triangular(vector< vector<float> > &m1) {
@@ -272,7 +278,6 @@ vector< vector<float> > upper_triangular(vector< vector<float> > &m1) {
 			m2[i][cols - j - 1] = m1[i][cols - j - 1];
 		}
 	}
-
 	return m2;
 }
 
@@ -300,6 +305,33 @@ vector< vector<float> > matrix_transpose(vector< vector<float> > &m1) {
 vector< vector<float> > matrix_multiply(vector< vector<float> >& m1, vector< vector<float> >& m2) {
 
 	
+	//n x k by k x m = n x m matrix
+	int rows1 = m1.size();
+	int cols1 = m1[0].size();
+	int rows2 = m2.size();
+	int cols2 = m2[0].size();
+
+	if (cols1 != rows2) {
+
+		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_multiply");
+		exit(1);
+	}
+
+	vector< vector<float> > m3;
+	for (int i = 0; i < rows1; i++) {
+		vector<float> temp(cols2, 0);
+		m3.push_back(temp);
+	}
+	
+	for (int i = 0; i < rows1; i++) {
+		for (int j = 0; j < cols2; j++) {
+
+			for (int k = 0; k < cols1; k++) {
+				m3[i][j] += m1[i][k] * m2[k][j];
+			}
+		}
+	}
+	return m3;
 }
 
 
