@@ -1,10 +1,7 @@
 #include <iostream>
 #include <vector>
 #include <numeric>
-
-//http://eigen.tuxfamily.org/index.php?title=Main_Page
-//License: MPL2 (free, copyleft)
-#include <Eigen/Dense>
+#include <algorithm>
 
 using namespace std;
 
@@ -276,21 +273,26 @@ int main() {
 		plw.push_back(-WY * L / 2);
 		plw.push_back(0);
 
+		//Pb good, plw good
+
 		//Local forces
 		x = matrix_transpose(abl);
 		vector<float> pl = matrix_multiply(x, pb);
+
+		debug(pl);
+
 		transform(pl.begin(), pl.end(), plw.begin(), pl.begin(), plus<float>());
+
+		cout << "PL" << endl;
+		//debug(pl);
+
+		cout << endl << endl;
 
 		//Global forces
 		x = matrix_transpose(alg);
 		vector<float> p = matrix_multiply(x, pl);
 
 		//Assemble Kff and Pf
-
-		//P is the problem here
-		debug(p);
-
-
 		for (int j = 0; j < 6; j++){
 		
 			if (l[j] >= 0) {
@@ -404,6 +406,9 @@ vector<float> matrix_multiply(vector< vector<float> > &m1, vector<float> &m2) {
 	int cols1 = m1[0].size();
 	int rows2 = m2.size();
 
+	//debug(m1);
+	//debug(m2);
+
 	if (cols1 != rows2) {
 		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_multiply");
 		exit(1);
@@ -418,6 +423,8 @@ vector<float> matrix_multiply(vector< vector<float> > &m1, vector<float> &m2) {
 				m3[i] += m1[i][k] * m2[k];
 			}
 	}
+
+	//debug(m3);
 	return m3;
 }
 
