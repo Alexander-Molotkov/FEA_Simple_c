@@ -287,13 +287,22 @@ int main() {
 
 		//Assemble Kff and Pf
 
+		//P is the problem here
+		debug(p);
+
+
 		for (int j = 0; j < 6; j++){
 		
-			if (l[j] > 0) {
+			if (l[j] >= 0) {
+
+
+			//	cout << l[j] - 1 << endl;
+			//	cout << p[j] << endl;
+
 				pf[l[j] -1] -= p[j];
 
 				for (int i = 0; i < 6; i++) {
-					if (l[i] > 0) {
+					if (l[i] >= 0) {
 
 						kff[l[i] - 1][l[j] - 1] += k[i][j];
 					}
@@ -301,7 +310,7 @@ int main() {
 			}
 		}
 
-		debug(kff);
+	//debug(pf);
 	}
 
 
