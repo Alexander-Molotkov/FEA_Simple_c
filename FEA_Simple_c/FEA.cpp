@@ -9,6 +9,8 @@ vector< vector<float> > upper_triangular(vector< vector<float> > &m1);
 vector< vector<float> > matrix_transpose(vector < vector<float> >& m1);
 vector<vector<float>> matrix_multiply(vector<vector<float>>& m1, vector<vector<float>>& m2);
 vector<float> matrix_multiply(vector< vector<float> >& m1, vector< float>& m2);
+vector< vector<float> > matrix_add(vector< vector <float> >& m1, vector< vector <float> >& m2);
+vector<float> matrix_add(vector <float> & m1, vector <float> &m2);
 
 void build_nodes(vector< vector<float> > &NODES);
 void build_elems(vector< vector<float> > &ELEMS);
@@ -136,8 +138,36 @@ int main() {
 		}
 	}
 
-	//debug(pf);
-	//debug(uc);
+	//TEST
+	/*
+	vector<vector<float>> test;
+	for (int i = 0; i < 3; i++) {
+		vector<float> temp;
+		temp.push_back(1);
+		temp.push_back(2);
+		temp.push_back(3);
+		test.push_back(temp);
+	}
+
+	vector<vector<float>> test2;
+	for (int i = 0; i < 3; i++) {
+		vector<float> temp;
+		temp.push_back(1);
+		temp.push_back(2);
+		temp.push_back(3);
+		test2.push_back(temp);
+	}
+
+	//vector<float> test2;
+	//test2.push_back(1);
+	//test2.push_back(2);
+	//test2.push_back(3);
+
+	debug(test);
+	debug(test2);
+	debug(matrix_add(test, test2));
+	*/
+
 
 	/*********************************************************************************************************
 	* Assemble stiffness matrix Kff and modify the load vector Pf for member loads and support displacements
@@ -221,7 +251,6 @@ int main() {
 		ub = matrix_multiply(abl, ul);
 
 		//Element properties and member loads
-
 		float E = ELEMS[e][2];
 		float A = ELEMS[e][3];
 		float I = ELEMS[e][4];
@@ -262,7 +291,7 @@ int main() {
 
 		//Basic force-deformation relationship
 		vector<float> pb = matrix_multiply(kb, ub);
-		transform(pb.begin(), pb.end(), pb0.begin(), pb.begin(), plus<float>());
+		pb = matrix_add(pb, pb0);
 
 		//"Reactions" due to member loads
 		vector<float> plw;
@@ -273,20 +302,10 @@ int main() {
 		plw.push_back(-WY * L / 2);
 		plw.push_back(0);
 
-		//Pb good, plw good
-
 		//Local forces
 		x = matrix_transpose(abl);
 		vector<float> pl = matrix_multiply(x, pb);
-
-		debug(pl);
-
-		transform(pl.begin(), pl.end(), plw.begin(), pl.begin(), plus<float>());
-
-		cout << "PL" << endl;
-		//debug(pl);
-
-		cout << endl << endl;
+		pl = matrix_add(pl, plw);
 
 		//Global forces
 		x = matrix_transpose(alg);
@@ -294,28 +313,20 @@ int main() {
 
 		//Assemble Kff and Pf
 		for (int j = 0; j < 6; j++){
-		
+
 			if (l[j] >= 0) {
-
-
-			//	cout << l[j] - 1 << endl;
-			//	cout << p[j] << endl;
-
-				pf[l[j] -1] -= p[j];
+				
+				pf[ l[j] -1 ] -= p[j];
 
 				for (int i = 0; i < 6; i++) {
-					if (l[i] >= 0) {
 
-						kff[l[i] - 1][l[j] - 1] += k[i][j];
+					if (l[i] >= 0) {
+						kff[ l[i]-1 ][ l[j]-1 ] += k[i][j];
 					}
 				}
 			}
 		}
-
-	//debug(pf);
 	}
-
-
 	return 0;
 }
 
@@ -365,7 +376,6 @@ vector< vector<float> > matrix_transpose(vector< vector<float> > &m1) {
 	return m2;
 }
 
-//TODO: Check
 vector< vector<float> > matrix_multiply(vector< vector<float> >& m1, vector< vector<float> >& m2) {
 
 	
@@ -398,35 +408,71 @@ vector< vector<float> > matrix_multiply(vector< vector<float> >& m1, vector< vec
 	return m3;
 }
 
-vector<float> matrix_multiply(vector< vector<float> > &m1, vector<float> &m2) {
+vector<float> matrix_multiply(vector< vector<float> >& m1, vector<float> &m2) {
 
-
+	
 	//n x k by k x m = n x m matrix
 	int rows1 = m1.size();
 	int cols1 = m1[0].size();
-	int rows2 = m2.size();
+	int rows2 = 1;
+	int cols2 = m2.size();
 
-	//debug(m1);
-	//debug(m2);
+	if (cols1 != cols2) {
 
-	if (cols1 != rows2) {
 		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_multiply");
 		exit(1);
 	}
 
-	//printf("%d %d %d", rows1, cols1, rows2);
-
 	vector<float> m3(rows1, 0);
-
+	
 	for (int i = 0; i < rows1; i++) {
-			for (int k = 0; k < cols1; k++) {
-				m3[i] += m1[i][k] * m2[k];
+		for (int j = 0; j < cols2; j++) {
+
+				m3[i] += m1[i][j] * m2[j];
 			}
 	}
-
-	//debug(m3);
 	return m3;
 }
+
+vector< vector<float> > matrix_add(vector< vector <float> >& m1, vector< vector <float> > &m2) {
+
+	if (m2.size() != m1.size()) {
+		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_add");
+		exit(1);
+	}
+
+	vector< vector<float> > m3;
+	for (int i = 0; i < m1.size(); i++) {
+		vector<float> temp(m1[0].size(), 0);
+		m3.push_back(temp);
+	}
+
+	for (int i = 0; i < m1.size(); i++) {
+		for (int j = 0; j < m1[0].size(); j++) {
+			m3[i][j] = m1[i][j] + m2[i][j];
+		}
+	}
+
+	return m3;
+}
+
+vector<float> matrix_add(vector <float> &m1, vector <float> &m2) {
+
+	if (m2.size() != m1.size()) {
+		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_add");
+		exit(1);
+	}
+
+	vector<float> m3(m1.size(), 0);
+
+	for (int i = 0; i < m1.size(); i++) {
+		m3[i] = m1[i] + m2[i];
+	}
+
+	return m3;
+}
+
+
 
 
 //Prints out a 2d vector for debugging purposes
@@ -700,7 +746,7 @@ void build_local_basic_transform(vector< vector<float> > &abl, float L) {
 	abl[1].push_back(1/L);
 	abl[1].push_back(1);
 	abl[1].push_back(0);
-	abl[1].push_back(1/L);
+	abl[1].push_back(-1/L);
 	abl[1].push_back(0);
 
 	abl[2].push_back(0);
