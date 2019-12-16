@@ -1,16 +1,16 @@
 #include <iostream>
 #include <vector>
 #include <numeric>
-
-//http://eigen.tuxfamily.org/index.php?title=Main_Page
-//License: MPL2 (free, copyleft)
-#include <Eigen/Dense>
+#include <algorithm>
 
 using namespace std;
 
 vector< vector<float> > upper_triangular(vector< vector<float> > &m1);
 vector< vector<float> > matrix_transpose(vector < vector<float> >& m1);
 vector<vector<float>> matrix_multiply(vector<vector<float>>& m1, vector<vector<float>>& m2);
+vector<float> matrix_multiply(vector< vector<float> >& m1, vector< float>& m2);
+vector< vector<float> > matrix_add(vector< vector <float> >& m1, vector< vector <float> >& m2);
+vector<float> matrix_add(vector <float> & m1, vector <float> &m2);
 
 void build_nodes(vector< vector<float> > &NODES);
 void build_elems(vector< vector<float> > &ELEMS);
@@ -123,8 +123,8 @@ int main() {
 	*	Create the joint load vector Pf and support displacement vector Uc
 	**********************************************************************/
 
-	vector <int> pf(nfdof, 0);
-	vector <int> uc(ncdof, 0);
+	vector <float> pf(nfdof, 0);
+	vector <float> uc(ncdof, 0);
 
 	for (int i = 0; i < NODE_Y; i++) {
 		for (int j = 0; j < 3; j++) {
@@ -138,8 +138,36 @@ int main() {
 		}
 	}
 
-	//debug(pf);
-	//debug(uc);
+	//TEST
+	/*
+	vector<vector<float>> test;
+	for (int i = 0; i < 3; i++) {
+		vector<float> temp;
+		temp.push_back(1);
+		temp.push_back(2);
+		temp.push_back(3);
+		test.push_back(temp);
+	}
+
+	vector<vector<float>> test2;
+	for (int i = 0; i < 3; i++) {
+		vector<float> temp;
+		temp.push_back(1);
+		temp.push_back(2);
+		temp.push_back(3);
+		test2.push_back(temp);
+	}
+
+	//vector<float> test2;
+	//test2.push_back(1);
+	//test2.push_back(2);
+	//test2.push_back(3);
+
+	debug(test);
+	debug(test2);
+	debug(matrix_add(test, test2));
+	*/
+
 
 	/*********************************************************************************************************
 	* Assemble stiffness matrix Kff and modify the load vector Pf for member loads and support displacements
@@ -148,42 +176,13 @@ int main() {
 	//Declaring nele, uf, kff
 	int nele = ELEMS_Y;
 
-	vector <int> uf(nfdof, 0);
+	vector <float> uf(nfdof, 0);
 
 	vector < vector<float> > kff;
 	for (int i = 0; i < nfdof; i++) {
 		vector<float> temp(nfdof, 0);
 		kff.push_back(temp);
 	}
-
-	//FOR DEBUG 
-	/*
-	vector < vector<float> > TEST;
-	for (int i = 0; i < 5; i++) {
-		vector<float> temp;
-		TEST.push_back(temp);
-		
-		for (int j = 0; j < 5; j++) {
-			TEST[i].push_back(i + j);
-		}
-	}
-	vector < vector<float> > TEST2;
-	for (int i = 0; i < 5; i++) {
-		vector<float> temp;
-		TEST2.push_back(temp);
-		
-		for (int j = 0; j < 5; j++) {
-			TEST2[i].push_back(i + j);
-		}
-	}
-
-
-	debug(TEST);
-	debug(upper_triangular(TEST));
-
-	debug( matrix_multiply(TEST, TEST2) );
-	*/
-	//END DEBUG 
 
 	//Calculation
 	for (int e = 0; e < nele; e++) {
@@ -197,7 +196,7 @@ int main() {
 		//Lookup vector
 		vector <float> l;
 		l = EQUATIONS[ndI - 1];
-		l.insert( l.end(), EQUATIONS[ndJ - 1].begin(), EQUATIONS[ndJ-1].end() );
+		l.insert(l.end(), EQUATIONS[ndJ - 1].begin(), EQUATIONS[ndJ - 1].end());
 
 		//Difference in X-coordinates
 		float dx = NODES[ndJ - 1][0] - NODES[ndI - 1][0];
@@ -206,7 +205,7 @@ int main() {
 		float dy = NODES[ndJ - 1][1] - NODES[ndI - 1][1];
 
 		//Element length and direction cosines
-		float L = pow( (pow(dx, 2) + pow(dy, 2)), 0.5 );
+		float L = pow((pow(dx, 2) + pow(dy, 2)), 0.5);
 
 		float c = dx / L;
 		float s = dy / L;
@@ -234,7 +233,7 @@ int main() {
 
 		//Select global displacements from Uf and Uc
 		vector<float> u(6, 0);
-		for(int i = 0; i < 6; i++) {
+		for (int i = 0; i < 6; i++) {
 			if (l[i] > 0) {
 				u[i] = uf[l[i] - 1];
 			}
@@ -243,16 +242,91 @@ int main() {
 			}
 		}
 
-
 		//Local Displacements
 		vector<float> ul(6, 0);
 		ul = matrix_multiply(alg, u);
 
+		//Basic deformations
+		vector<float> ub(3, 0);
+		ub = matrix_multiply(abl, ul);
 
+		//Element properties and member loads
+		float E = ELEMS[e][2];
+		float A = ELEMS[e][3];
+		float I = ELEMS[e][4];
+		float WX = ELEMS[e][5];
+		float WY = ELEMS[e][6];
+
+		//Basic Stiffness
+		vector< vector<float> > kb;
+		for (int i = 0; i < 3; i++) {
+			vector<float> temp;
+			kb.push_back(temp);
+		}
+		kb[0].push_back(E * A / L);
+		kb[0].push_back(0);
+		kb[0].push_back(0);
+		kb[1].push_back(0);
+		kb[1].push_back(4 * E * I / L);
+		kb[1].push_back(2 * E * I / L);
+		kb[2].push_back(0);
+		kb[2].push_back(2 * E * I / L);
+		kb[2].push_back(4 * E * I / L);
+
+		//Local stiffness
+		vector< vector<float> > x = matrix_transpose(abl);
+		vector< vector<float> > y = matrix_multiply(kb, abl);
+		vector< vector<float> > kl = matrix_multiply(x, y);
+
+		//Global stiffness
+		x = matrix_transpose(alg);
+		y = matrix_multiply(kl, alg);
+		vector< vector<float> > k = matrix_multiply(x, y);
+
+		//Fixed-end basic forces
+		vector<float> pb0;
+		pb0.push_back(-WX * L / 2);
+		pb0.push_back(-WY * pow(L, 2) / 12);
+		pb0.push_back(WY * pow(L, 2) / 12);
+
+		//Basic force-deformation relationship
+		vector<float> pb = matrix_multiply(kb, ub);
+		pb = matrix_add(pb, pb0);
+
+		//"Reactions" due to member loads
+		vector<float> plw;
+		plw.push_back(-WX * L);
+		plw.push_back(-WY * L / 2);
+		plw.push_back(0);
+		plw.push_back(0);
+		plw.push_back(-WY * L / 2);
+		plw.push_back(0);
+
+		//Local forces
+		x = matrix_transpose(abl);
+		vector<float> pl = matrix_multiply(x, pb);
+		pl = matrix_add(pl, plw);
+
+		//Global forces
+		x = matrix_transpose(alg);
+		vector<float> p = matrix_multiply(x, pl);
+
+		//Assemble Kff and Pf
+		for (int j = 0; j < 6; j++){
+
+			if (l[j] >= 0) {
+				
+				pf[ l[j] -1 ] -= p[j];
+
+				for (int i = 0; i < 6; i++) {
+
+					if (l[i] >= 0) {
+						kff[ l[i]-1 ][ l[j]-1 ] += k[i][j];
+					}
+				}
+			}
+		}
 	}
-
-	//debug(kff);
-
 	return 0;
 }
 
@@ -333,6 +407,72 @@ vector< vector<float> > matrix_multiply(vector< vector<float> >& m1, vector< vec
 	}
 	return m3;
 }
+
+vector<float> matrix_multiply(vector< vector<float> >& m1, vector<float> &m2) {
+
+	
+	//n x k by k x m = n x m matrix
+	int rows1 = m1.size();
+	int cols1 = m1[0].size();
+	int rows2 = 1;
+	int cols2 = m2.size();
+
+	if (cols1 != cols2) {
+
+		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_multiply");
+		exit(1);
+	}
+
+	vector<float> m3(rows1, 0);
+	
+	for (int i = 0; i < rows1; i++) {
+		for (int j = 0; j < cols2; j++) {
+
+				m3[i] += m1[i][j] * m2[j];
+			}
+	}
+	return m3;
+}
+
+vector< vector<float> > matrix_add(vector< vector <float> >& m1, vector< vector <float> > &m2) {
+
+	if (m2.size() != m1.size()) {
+		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_add");
+		exit(1);
+	}
+
+	vector< vector<float> > m3;
+	for (int i = 0; i < m1.size(); i++) {
+		vector<float> temp(m1[0].size(), 0);
+		m3.push_back(temp);
+	}
+
+	for (int i = 0; i < m1.size(); i++) {
+		for (int j = 0; j < m1[0].size(); j++) {
+			m3[i][j] = m1[i][j] + m2[i][j];
+		}
+	}
+
+	return m3;
+}
+
+vector<float> matrix_add(vector <float> &m1, vector <float> &m2) {
+
+	if (m2.size() != m1.size()) {
+		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_add");
+		exit(1);
+	}
+
+	vector<float> m3(m1.size(), 0);
+
+	for (int i = 0; i < m1.size(); i++) {
+		m3[i] = m1[i] + m2[i];
+	}
+
+	return m3;
+}
+
+
 
 
 //Prints out a 2d vector for debugging purposes
@@ -606,7 +746,7 @@ void build_local_basic_transform(vector< vector<float> > &abl, float L) {
 	abl[1].push_back(1/L);
 	abl[1].push_back(1);
 	abl[1].push_back(0);
-	abl[1].push_back(1/L);
+	abl[1].push_back(-1/L);
 	abl[1].push_back(0);
 
 	abl[2].push_back(0);
