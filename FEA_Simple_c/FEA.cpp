@@ -5,7 +5,8 @@
 
 using namespace std;
 
-vector< vector<float> > upper_triangular(vector< vector<float> > &m1);
+vector<float> cholesky_solve(vector<vector<float>>& a, vector<float>& b);
+vector< vector<float> > cholesky_decomp(vector< vector<float> > &m1);
 vector< vector<float> > matrix_transpose(vector < vector<float> >& m1);
 vector<vector<float>> matrix_multiply(vector<vector<float>>& m1, vector<vector<float>>& m2);
 vector<float> matrix_multiply(vector< vector<float> >& m1, vector< float>& m2);
@@ -137,41 +138,6 @@ int main() {
 			}
 		}
 	}
-
-	//TEST
-	/*
-	vector<vector<float>> test;
-	for (int i = 0; i < 3; i++) {
-		vector<float> temp;
-		temp.push_back(1);
-		temp.push_back(2);
-		temp.push_back(3);
-		test.push_back(temp);
-	}
-
-	vector<vector<float>> test2;
-	for (int i = 0; i < 3; i++) {
-		vector<float> temp;
-		temp.push_back(1);
-		temp.push_back(2);
-		temp.push_back(3);
-		test2.push_back(temp);
-	}
-
-	//vector<float> test2;
-	//test2.push_back(1);
-	//test2.push_back(2);
-	//test2.push_back(3);
-
-	debug(test);
-	debug(test2);
-	debug(matrix_add(test, test2));
-	*/
-
-
-	/*********************************************************************************************************
-	* Assemble stiffness matrix Kff and modify the load vector Pf for member loads and support displacements
-	*********************************************************************************************************/
 
 	//Declaring nele, uf, kff
 	int nele = ELEMS_Y;
@@ -327,32 +293,136 @@ int main() {
 			}
 		}
 	}
+
+	//TEST
+	vector<vector<float>> test;
+	for (int i = 0; i < 3; i++) {
+		vector<float> temp;
+		test.push_back(temp);
+	}
+	test[0].push_back(4);
+	test[0].push_back(12);
+	test[0].push_back(-16);
+ 	test[1].push_back(12);
+	test[1].push_back(37);
+	test[1].push_back(-43);	
+	test[2].push_back(-16);
+	test[2].push_back(-43);
+	test[2].push_back(98);
+
+	/*vector<vector<float>> test2;
+	for (int i = 0; i < 3; i++) {
+		vector<float> temp;
+		temp.push_back(1);
+		temp.push_back(2);
+		temp.push_back(3);
+		test2.push_back(temp);
+	}*/
+
+	vector<float> test2;
+	test2.push_back(1);
+	test2.push_back(2);
+	test2.push_back(3);
+
+	test = cholesky_decomp(test);
+	debug(test);
+	debug(test2);
+	//debug(matrix_transpose(test));
+
+
+	/**************************************
+	* Solve for the nodal displacements Uf
+	**************************************/
+
+	cholesky_solve(test, test2);
+
+
+
+
 	return 0;
 }
 
-vector< vector<float> > upper_triangular(vector< vector<float> > &m1) {
+vector<float> cholesky_solve(vector< vector<float> > &a, vector<float> &b) {
 
-	int rows = m1.size();
-	int cols = m1[0].size();
+	//Solve for ax = b
+	vector<float> x(b.size(), 0);
+
+	float s = 0;
+	//Lower triangle
+	for (int i = 0; i < a.size(); i++) {
+		for (int j = 0; j < i; j++) {
+
+			s += a[i][j] * x[j];
+		}
+		x[i] = (b[i] - s) / a[i][i];
+	}
+
+	debug(x);
+	return x;
+}
+
+vector< vector<float> > cholesky_decomp(vector< vector<float> > &matrix) {
+
+	int rows = matrix.size();
+	int cols = matrix[0].size();
 
 	if (rows != cols) {
-		fprintf(stderr, "ERROR: You can only find the upper-triangular matrix of a square matrix.");
+		fprintf(stderr, "ERROR: You can only find the lower-triangular matrix of a square matrix.");
 		exit(1);
 	}
 
-	vector< vector<float> > m2;
+	vector< vector<float> > lower;
 	for (int i = 0; i < rows; i++) {
 		vector<float> temp(cols, 0);
-		m2.push_back(temp);
+		lower.push_back(temp);
 	}
 
+	/*
 	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j < cols - i; j++) {
+		for (int j = 0; j <= i; j++) {
 
-			m2[i][cols - j - 1] = m1[i][cols - j - 1];
+			int s = 0;
+
+			if (j == i) {
+				for (int k = 0; k < j; k++) {
+					s += pow(m2[j][k], 2);
+				}
+				m2[j][j] = sqrt(m1[j][j] - s);
+			}
+			else {
+				for (int k = 0; k < j; k++) {
+					s += (m2[i][k] * m2[j][k]);
+				}
+				m2[i][j] = (m1[i][j] - s) / m2[j][j];
+			}
 		}
 	}
-	return m2;
+	*/
+
+	for (int i = 0; i < rows; i++) {
+		for (int j = 0; j <= i; j++) {
+			int sum = 0;
+
+			if (j == i) // summation for diagnols 
+			{
+				for (int k = 0; k < j; k++)
+					sum += pow(lower[j][k], 2);
+				lower[j][j] = sqrt(matrix[j][j] -
+					sum);
+			}
+			else {
+
+				// Evaluating L(i, j) using L(j, j) 
+				for (int k = 0; k < j; k++)
+					sum += (lower[i][k] * lower[j][k]);
+				lower[i][j] = (matrix[i][j] - sum) /
+					lower[j][j];
+			}
+		}
+	}
+
+
+	return lower;
 }
 
 vector< vector<float> > matrix_transpose(vector< vector<float> > &m1) {
@@ -506,12 +576,12 @@ void debug (vector< vector<int> > v) {
 }
 void debug(vector<float> v) {
 
-	printf("\n[");
+	printf("\n");
 	for (int i = 0; i < v.size(); i++) {
+		printf("[");
 		printf(" ");
-		cout << v[i] << ", ";
+		cout << v[i] << " ]\n";
 	}
-		printf("]\n");
 	return;
 }
 void debug(vector<int> v) {
