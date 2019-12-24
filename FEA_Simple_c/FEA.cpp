@@ -7,6 +7,7 @@ using namespace std;
 
 vector<float> cholesky_solve(vector<vector<float>> &a, vector<float>& b);
 vector<float> forward_sub(vector<vector<float>> &l, vector<float> &b);
+vector<float> backward_sub(vector<vector<float>>& u, vector<float>& y);
 vector< vector<float> > cholesky_decomp(vector< vector<float> > &m1);
 vector< vector<float> > matrix_transpose(vector < vector<float> >& m1);
 vector<vector<float>> matrix_multiply(vector<vector<float>>& m1, vector<vector<float>>& m2);
@@ -337,19 +338,11 @@ int main() {
 vector<float> cholesky_solve(vector< vector<float> > &a, vector<float> &b) {
 
 	//Solve for Ax = b
-	vector<float> x(a.size(), 0);
-
 	vector< vector<float> > l = cholesky_decomp(a);
 	vector< vector<float> > u = matrix_transpose(l);
 
-	debug(l);
-	debug(u);
-	debug(b);
-
 	vector<float> y = forward_sub(l, b);
-	debug(y);
-
-	
+	vector<float> x = backward_sub(u, y);
 
 	return x;
 }
@@ -359,21 +352,38 @@ vector<float> forward_sub(vector< vector<float> > &l, vector<float> &b) {
 	vector<float> y(b.size(), 0);
 	float s = 0;
 
-	//On a lower triangular matrix
+	//On a lower-triangular matrix
 	for (int i = 0; i < l.size(); i++) {
+
+		float s = b[i];
+
 		for (int j = 0; j < i; j++) {
 
-			s += l[i][j] * y[j];
+			s -= l[i][j] * y[j];
 		}
-		y[i] = (b[i] - s) / l[i][i];
+		y[i] = s / l[i][i];
 	}
 	return y;
 }
 
-//vector< vector<float> > backward_sub(vector< vector<float> > $u, vector<float> $y)
-//https://www.gaussianwaves.com/2013/05/solving-a-triangular-matrix-using-forward-backward-substitution/
-//https://vismor.com/documents/network_analysis/matrix_algorithms/S5.SS1.php
-//http://mathfaculty.fullerton.edu/mathews/n2003/BackSubstitutionMod.html
+vector<float> backward_sub(vector< vector<float> > &u, vector<float> &y) {
+
+	vector<float> x(u.size(), 0);
+
+	//On an upper-triangular matrix
+	for (int i = u.size() -1; i >= 0; i--) {
+
+		float s = y[i];
+
+		for (int j = i; j < u.size(); j++) {
+
+			s -= u[i][j] * x[j];
+		}
+		x[i] = s / u[i][i];
+	}
+
+	return x;
+}
 
 vector< vector<float> > cholesky_decomp(vector< vector<float> > &matrix) {
 
