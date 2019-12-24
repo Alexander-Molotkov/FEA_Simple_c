@@ -5,7 +5,9 @@
 
 using namespace std;
 
-vector<float> cholesky_solve(vector<vector<float>>& a, vector<float>& b);
+vector<float> cholesky_solve(vector<vector<float>> &a, vector<float>& b);
+vector<float> forward_sub(vector<vector<float>> &l, vector<float> &b);
+vector<float> backward_sub(vector<vector<float>>& u, vector<float>& y);
 vector< vector<float> > cholesky_decomp(vector< vector<float> > &m1);
 vector< vector<float> > matrix_transpose(vector < vector<float> >& m1);
 vector<vector<float>> matrix_multiply(vector<vector<float>>& m1, vector<vector<float>>& m2);
@@ -324,40 +326,62 @@ int main() {
 	test2.push_back(2);
 	test2.push_back(3);
 
-	test = cholesky_decomp(test);
-	debug(test);
-	debug(test2);
-	//debug(matrix_transpose(test));
-
-
 	/**************************************
 	* Solve for the nodal displacements Uf
 	**************************************/
 
 	cholesky_solve(test, test2);
 
-
-
-
 	return 0;
 }
 
 vector<float> cholesky_solve(vector< vector<float> > &a, vector<float> &b) {
 
-	//Solve for ax = b
-	vector<float> x(b.size(), 0);
+	//Solve for Ax = b
+	vector< vector<float> > l = cholesky_decomp(a);
+	vector< vector<float> > u = matrix_transpose(l);
 
+	vector<float> y = forward_sub(l, b);
+	vector<float> x = backward_sub(u, y);
+
+	return x;
+}
+
+vector<float> forward_sub(vector< vector<float> > &l, vector<float> &b) {
+	
+	vector<float> y(b.size(), 0);
 	float s = 0;
-	//Lower triangle
-	for (int i = 0; i < a.size(); i++) {
+
+	//On a lower-triangular matrix
+	for (int i = 0; i < l.size(); i++) {
+
+		float s = b[i];
+
 		for (int j = 0; j < i; j++) {
 
-			s += a[i][j] * x[j];
+			s -= l[i][j] * y[j];
 		}
-		x[i] = (b[i] - s) / a[i][i];
+		y[i] = s / l[i][i];
+	}
+	return y;
+}
+
+vector<float> backward_sub(vector< vector<float> > &u, vector<float> &y) {
+
+	vector<float> x(u.size(), 0);
+
+	//On an upper-triangular matrix
+	for (int i = u.size() -1; i >= 0; i--) {
+
+		float s = y[i];
+
+		for (int j = i; j < u.size(); j++) {
+
+			s -= u[i][j] * x[j];
+		}
+		x[i] = s / u[i][i];
 	}
 
-	debug(x);
 	return x;
 }
 
@@ -377,33 +401,11 @@ vector< vector<float> > cholesky_decomp(vector< vector<float> > &matrix) {
 		lower.push_back(temp);
 	}
 
-	/*
-	for (int i = 0; i < rows; i++) {
-		for (int j = 0; j <= i; j++) {
-
-			int s = 0;
-
-			if (j == i) {
-				for (int k = 0; k < j; k++) {
-					s += pow(m2[j][k], 2);
-				}
-				m2[j][j] = sqrt(m1[j][j] - s);
-			}
-			else {
-				for (int k = 0; k < j; k++) {
-					s += (m2[i][k] * m2[j][k]);
-				}
-				m2[i][j] = (m1[i][j] - s) / m2[j][j];
-			}
-		}
-	}
-	*/
-
 	for (int i = 0; i < rows; i++) {
 		for (int j = 0; j <= i; j++) {
 			int sum = 0;
 
-			if (j == i) // summation for diagnols 
+			if (j == i) // summation for diagonals 
 			{
 				for (int k = 0; k < j; k++)
 					sum += pow(lower[j][k], 2);
@@ -420,8 +422,6 @@ vector< vector<float> > cholesky_decomp(vector< vector<float> > &matrix) {
 			}
 		}
 	}
-
-
 	return lower;
 }
 
@@ -448,7 +448,6 @@ vector< vector<float> > matrix_transpose(vector< vector<float> > &m1) {
 
 vector< vector<float> > matrix_multiply(vector< vector<float> >& m1, vector< vector<float> >& m2) {
 
-	
 	//n x k by k x m = n x m matrix
 	int rows1 = m1.size();
 	int cols1 = m1[0].size();
@@ -541,9 +540,6 @@ vector<float> matrix_add(vector <float> &m1, vector <float> &m2) {
 
 	return m3;
 }
-
-
-
 
 //Prints out a 2d vector for debugging purposes
 void debug (vector< vector<float> > v) {
@@ -826,5 +822,3 @@ void build_local_basic_transform(vector< vector<float> > &abl, float L) {
 	abl[2].push_back(-1 / L);
 	abl[2].push_back(1);
 }
-
-
