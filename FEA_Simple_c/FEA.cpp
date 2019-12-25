@@ -2,6 +2,7 @@
 #include <vector>
 #include <numeric>
 #include <algorithm>
+#include <chrono>
 
 using namespace std;
 
@@ -29,6 +30,9 @@ void debug(vector<int> v);
 void debug(vector<float> v);
 
 int main() {
+
+	//Start Timer
+	auto start = chrono::high_resolution_clock::now();
 
 	const int NODE_X = 2;
 	const int NODE_Y = 7;
@@ -88,6 +92,10 @@ int main() {
 	*Everything below this line is generic and should work for any input above
 	**************************************************************************/
 
+	auto checkpoint = chrono::high_resolution_clock::now();
+	auto checkpoint_start = chrono::high_resolution_clock::now();
+	auto duration = chrono::duration_cast<chrono::microseconds>(checkpoint - start);
+	cout << "Input model built in " << duration.count() << " milliseconds. ";
 	printf("Assembling Kff and modifying Pf. . .\n");
 
 	/***************************
@@ -330,7 +338,11 @@ int main() {
 	* Solve for the nodal displacements Uf
 	**************************************/
 
-	cholesky_solve(test, test2);
+	vector<float> solved = cholesky_solve(kff, pf);
+
+	duration = chrono::duration_cast<chrono::microseconds>(checkpoint_start - start);
+	cout << "Kff assembled and Pf modified in " << duration.count() << " milliseconds. ";
+	printf("Doing next thing");
 
 	return 0;
 }
