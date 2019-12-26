@@ -49,7 +49,7 @@ int main() {
 	* The following functions are used to build the hardcoded input model
 	*********************************************************************/
 
-	printf("Building input model. . .\n");
+	printf("Calculating. . .\n");
 
 	vector< vector<double> > NODES;
 	for(int i = 0; i < NODE_Y; i++) {
@@ -95,8 +95,7 @@ int main() {
 	auto checkpoint = chrono::high_resolution_clock::now();
 	auto checkpoint_start = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(checkpoint - start);
-	cout << "Input model built in " << duration.count() << " milliseconds. ";
-	printf("Assembling Kff, modifying Pf and solving for Uf. . .\n");
+	cout << "Input model built in " << duration.count() << " milliseconds. \n";
 
 	/***************************
 	*	Assign equation numbers
@@ -175,16 +174,16 @@ int main() {
 		l.insert(l.end(), EQUATIONS[ndJ - 1].begin(), EQUATIONS[ndJ - 1].end());
 
 		//Difference in X-coordinates
-		double dx = NODES[ndJ - 1][0] - NODES[ndI - 1][0];
+		double DX = NODES[ndJ - 1][0] - NODES[ndI - 1][0];
 
 		//Difference in y-coordinates
-		double dy = NODES[ndJ - 1][1] - NODES[ndI - 1][1];
+		double DY = NODES[ndJ - 1][1] - NODES[ndI - 1][1];
 
 		//Element length and direction cosines
-		double L = pow((pow(dx, 2) + pow(dy, 2)), 0.5);
+		double L = pow((pow(DX, 2) + pow(DY, 2)), 0.5);
 
-		double c = dx / L;
-		double s = dy / L;
+		double c = DX / L;
+		double s = DY / L;
 
 		//Local-basic transformation
 		vector< vector<double> > abl;
@@ -304,60 +303,152 @@ int main() {
 		}
 	}
 
-	//TEST
-	vector<vector<double>> test;
-	for (int i = 0; i < 3; i++) {
-		vector<double> temp;
-		test.push_back(temp);
-	}
-	test[0].push_back(4);
-	test[0].push_back(12);
-	test[0].push_back(-16);
- 	test[1].push_back(12);
-	test[1].push_back(37);
-	test[1].push_back(-43);	
-	test[2].push_back(-16);
-	test[2].push_back(-43);
-	test[2].push_back(98);
-
-	/*vector<vector<double>> test2;
-	for (int i = 0; i < 3; i++) {
-		vector<double> temp;
-		temp.push_back(1);
-		temp.push_back(2);
-		temp.push_back(3);
-		test2.push_back(temp);
-	}*/
-
-	vector<double> test2;
-	test2.push_back(1);
-	test2.push_back(2);
-	test2.push_back(3);
-
 	/**************************************
 	* Solve for the nodal displacements Uf
 	**************************************/
-
-	/*cout << "Kff" << endl;
-	for (int i = 0; i < kff.size(); i++) {
-		for (int j = 0; j < kff[0].size(); j++) {
-
-			printf("%f\n", kff[i][j]);
-		}
-	}
-	*/
-
 
 	if (nfdof > 0) {
 		uf = cholesky_solve(kff, pf);
 	}
 
-	debug(uf);
+	/****************************
+	* Assemble the reactions Pc
+	****************************/
 
-	duration = chrono::duration_cast<chrono::microseconds>(checkpoint_start - start);
 	checkpoint_start = chrono::high_resolution_clock::now();
+	duration = chrono::duration_cast<chrono::microseconds>(checkpoint_start - start);
 	cout << "Kff assembled, Pf modified, and Uf solved for in " << duration.count() << " milliseconds. ";
-	printf("Assembling Pc. . .");
+
+	vector<double> pc(ncdof, 0);
+
+	for (int e = 0; e < nele; e++) {
+
+		//I and J nodes for this element
+		double ndI = ELEMS[e][0];
+		double ndJ = ELEMS[e][1];
+
+		//Lookup Vector
+		vector<double> l;	
+		l = EQUATIONS[ndI - 1];
+		l.insert(l.end(), EQUATIONS[ndJ - 1].begin(), EQUATIONS[ndJ - 1].end());
+
+		//Difference in X-coordinates
+		double XI = NODES[ndI - 1][0];
+		double XJ = NODES[ndJ - 1][0];
+		double DX = XJ - XI;
+
+		//Difference in Y-coordinates
+		double YI = NODES[ndI - 1][1];
+		double YJ = NODES[ndJ - 1][1];
+		double DY = YJ - YI;
+
+		//Element length and direction cosines
+		double L = pow(pow(DX, 2) + pow(DY, 2), 0.5);
+		double c = DX / L;
+		double s = DY / L;
+
+		//Local-basic transformation
+		vector< vector<double> > abl;
+		for (int i = 0; i < 3; i++) {
+			vector<double> temp;
+			abl.push_back(temp);
+		}
+		build_local_basic_transform(abl, L);
+
+		//Global-lobal transformation
+		vector< vector<double> > alg;
+		for (int i = 0; i < 6; i++) {
+			vector<double> temp(6, 0);
+			alg.push_back(temp);
+		}
+		alg[0][0] = c; alg[0][1] = s;
+		alg[1][0] = -s; alg[1][1] = c;
+		alg[2][2] = 1;
+		alg[3][3] = c; alg[3][4] = s;
+		alg[4][3] = -s; alg[4][4] = c;
+		alg[5][5] = 1;
+
+		//Select global displacements from Uf and Uc
+		vector<double> u(6, 0);
+		for (int i = 0; i < 6; i++) {
+			if (l[i] > 0) {
+				u[i] = uf[l[i] - 1];
+			}
+			else {
+				u[i] = uc[-l[i] - 1];
+			}
+		}
+
+		//Local Displacements
+		vector<double> ul(6, 0);
+		ul = matrix_multiply(alg, u);
+
+		//Basic deformations
+		vector<double> ub(3, 0);
+		ub = matrix_multiply(abl, ul);
+
+		//Element properties and member loads
+		double E = ELEMS[e][2];
+		double A = ELEMS[e][3];
+		double I = ELEMS[e][4];
+		double WX = ELEMS[e][5];
+		double WY = ELEMS[e][6];
+
+		//Basic Stiffness
+		vector< vector<double> > kb;
+		for (int i = 0; i < 3; i++) {
+			vector<double> temp;
+			kb.push_back(temp);
+		}
+		kb[0].push_back(E* A / L);
+		kb[0].push_back(0);
+		kb[0].push_back(0);
+		kb[1].push_back(0);
+		kb[1].push_back(4 * E* I / L);
+		kb[1].push_back(2 * E* I / L);
+		kb[2].push_back(0);
+		kb[2].push_back(2 * E* I / L);
+		kb[2].push_back(4 * E* I / L);
+
+		//Fixed-end basic forces
+		vector<double> pb0;
+		pb0.push_back(-WX * L / 2);
+		pb0.push_back(-WY * pow(L, 2) / 12);
+		pb0.push_back(WY* pow(L, 2) / 12);
+
+		//Basic force-deformation relationship
+		vector<double> pb = matrix_multiply(kb, ub);
+		pb = matrix_add(pb, pb0);
+
+		//"Reactions" due to member loads
+		vector<double> plw;
+		plw.push_back(-WX * L);
+		plw.push_back(-WY * L / 2);
+		plw.push_back(0);
+		plw.push_back(0);
+		plw.push_back(-WY * L / 2);
+		plw.push_back(0);
+
+		//Local forces
+		vector< vector<double> > x = matrix_transpose(abl);
+		vector<double> pl = matrix_multiply(x, pb);
+		pl = matrix_add(pl, plw);
+
+		//Global forces
+		x = matrix_transpose(alg);
+		vector<double> p = matrix_multiply(x, pl);
+
+		//Assemble Pc
+		for (int j = 0; j < 6; j++) {
+			if( l[j] < 0 ){
+
+				pc[-l[j] - 1] += p[j];
+			}
+		}
+	}
+
+	duration = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - checkpoint_start);
+	cout << "\nPC assembled in " << duration.count() << " milliseconds.\n";
 
 	return 0;
 }
