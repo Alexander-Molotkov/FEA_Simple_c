@@ -16,11 +16,11 @@ vector<double> matrix_multiply(vector< vector<double> >& m1, vector< double>& m2
 vector< vector<double> > matrix_add(vector< vector <double> >& m1, vector< vector <double> >& m2);
 vector<double> matrix_add(vector <double> & m1, vector <double> &m2);
 
-void build_nodes(vector< vector<double> > &NODES);
-void build_elems(vector< vector<double> > &ELEMS);
-void build_supports(vector< vector<double> > &SUPPORTS);
-void build_nodal_loads(vector< vector<double> > &NODALLOADS);
-void build_support_disps(vector< vector<double> > &SUPPORTDISPS);
+void build_nodes(int sizeX, int sizeY, vector< vector<double> > &NODES);
+void build_elems(int sizeX, int sizeY, vector< vector<double> > &ELEMS);
+void build_supports(int sizeX, int sizeY, vector< vector<double> > &SUPPORTS);
+void build_nodal_loads(int sizeX, int sizeY, vector< vector<double> > &NODALLOADS);
+void build_support_disps(int sizeX, int sizeY, vector< vector<double> > &SUPPORTDISPS);
 
 void build_local_basic_transform(vector< vector<double> >& abl, double L);
 
