@@ -6,28 +6,28 @@
 
 using namespace std;
 
-vector<float> cholesky_solve(vector<vector<float>> &a, vector<float>& b);
-vector<float> forward_sub(vector<vector<float>> &l, vector<float> &b);
-vector<float> backward_sub(vector<vector<float>>& u, vector<float>& y);
-vector< vector<float> > cholesky_decomp(vector< vector<float> > &m1);
-vector< vector<float> > matrix_transpose(vector < vector<float> >& m1);
-vector<vector<float>> matrix_multiply(vector<vector<float>>& m1, vector<vector<float>>& m2);
-vector<float> matrix_multiply(vector< vector<float> >& m1, vector< float>& m2);
-vector< vector<float> > matrix_add(vector< vector <float> >& m1, vector< vector <float> >& m2);
-vector<float> matrix_add(vector <float> & m1, vector <float> &m2);
+vector<double> cholesky_solve(vector<vector<double>> &a, vector<double>& b);
+vector<double> forward_sub(vector<vector<double>> &l, vector<double> &b);
+vector<double> backward_sub(vector<vector<double>>& u, vector<double>& y);
+vector< vector<double> > cholesky_decomp(vector< vector<double> > &m1);
+vector< vector<double> > matrix_transpose(vector < vector<double> >& m1);
+vector<vector<double>> matrix_multiply(vector<vector<double>>& m1, vector<vector<double>>& m2);
+vector<double> matrix_multiply(vector< vector<double> >& m1, vector< double>& m2);
+vector< vector<double> > matrix_add(vector< vector <double> >& m1, vector< vector <double> >& m2);
+vector<double> matrix_add(vector <double> & m1, vector <double> &m2);
 
-void build_nodes(vector< vector<float> > &NODES);
-void build_elems(vector< vector<float> > &ELEMS);
-void build_supports(vector< vector<float> > &SUPPORTS);
-void build_nodal_loads(vector< vector<float> > &NODALLOADS);
-void build_support_disps(vector< vector<float> > &SUPPORTDISPS);
+void build_nodes(vector< vector<double> > &NODES);
+void build_elems(vector< vector<double> > &ELEMS);
+void build_supports(vector< vector<double> > &SUPPORTS);
+void build_nodal_loads(vector< vector<double> > &NODALLOADS);
+void build_support_disps(vector< vector<double> > &SUPPORTDISPS);
 
-void build_local_basic_transform(vector< vector<float> >& abl, float L);
+void build_local_basic_transform(vector< vector<double> >& abl, double L);
 
-void debug(vector< vector<float> >);
+void debug(vector< vector<double> >);
 void debug(vector< vector<int> >);
 void debug(vector<int> v);
-void debug(vector<float> v);
+void debug(vector<double> v);
 
 int main() {
 
@@ -51,29 +51,29 @@ int main() {
 
 	printf("Building input model. . .\n");
 
-	vector< vector<float> > NODES;
+	vector< vector<double> > NODES;
 	for(int i = 0; i < NODE_Y; i++) {
-		vector<float> temp;
+		vector<double> temp;
 		NODES.push_back(temp);
 	}
-	vector< vector<float> > ELEMS;
+	vector< vector<double> > ELEMS;
 	for (int i = 0; i < ELEMS_Y; i++) {
-		vector<float> temp;
+		vector<double> temp;
 		ELEMS.push_back(temp);
 	}
-	vector< vector<float> > SUPPORTS;
+	vector< vector<double> > SUPPORTS;
 	for (int i = 0; i < SUPPORTS_Y; i++) {
-		vector<float> temp;
+		vector<double> temp;
 		SUPPORTS.push_back(temp);
 	}
-	vector< vector<float> > NODALLOADS;
+	vector< vector<double> > NODALLOADS;
 	for (int i = 0; i < NODALLOADS_Y; i++) {
-		vector<float> temp;
+		vector<double> temp;
 		NODALLOADS.push_back(temp);
 	}
-	vector< vector<float> > SUPPORTDISPS;
+	vector< vector<double> > SUPPORTDISPS;
 	for (int i = 0; i < SUPPORTDISPS_Y; i++) {
-		vector<float> temp;
+		vector<double> temp;
 		SUPPORTDISPS.push_back(temp);
 	}
 
@@ -96,19 +96,19 @@ int main() {
 	auto checkpoint_start = chrono::high_resolution_clock::now();
 	auto duration = chrono::duration_cast<chrono::microseconds>(checkpoint - start);
 	cout << "Input model built in " << duration.count() << " milliseconds. ";
-	printf("Assembling Kff and modifying Pf. . .\n");
+	printf("Assembling Kff, modifying Pf and solving for Uf. . .\n");
 
 	/***************************
 	*	Assign equation numbers
 	***************************/
-	int nfdof = 0; 
-	int ncdof = 0;
-	
+	double nfdof = 0; 
+	double ncdof = 0;
+
 	//Create equation array
-	vector< vector<float> > EQUATIONS;
+	vector< vector<double> > EQUATIONS;
 	for (int i = 0; i < NODE_Y; i++) {
 
-		vector<float> temp(3, 0);
+		vector<double> temp(3, 0);
 		EQUATIONS.push_back(temp);
 	}
 
@@ -134,8 +134,8 @@ int main() {
 	*	Create the joint load vector Pf and support displacement vector Uc
 	**********************************************************************/
 
-	vector <float> pf(nfdof, 0);
-	vector <float> uc(ncdof, 0);
+	vector <double> pf(nfdof, 0.0000);
+	vector <double> uc(ncdof, 0.0000);
 
 	for (int i = 0; i < NODE_Y; i++) {
 		for (int j = 0; j < 3; j++) {
@@ -152,11 +152,11 @@ int main() {
 	//Declaring nele, uf, kff
 	int nele = ELEMS_Y;
 
-	vector <float> uf(nfdof, 0);
+	vector <double> uf(nfdof, 0);
 
-	vector < vector<float> > kff;
+	vector < vector<double> > kff;
 	for (int i = 0; i < nfdof; i++) {
-		vector<float> temp(nfdof, 0);
+		vector<double> temp(nfdof, 0);
 		kff.push_back(temp);
 	}
 
@@ -170,34 +170,34 @@ int main() {
 		//vector1.insert(vector1.end(), vector2.begin(), vector2.end());
 
 		//Lookup vector
-		vector <float> l;
+		vector <double> l;
 		l = EQUATIONS[ndI - 1];
 		l.insert(l.end(), EQUATIONS[ndJ - 1].begin(), EQUATIONS[ndJ - 1].end());
 
 		//Difference in X-coordinates
-		float dx = NODES[ndJ - 1][0] - NODES[ndI - 1][0];
+		double dx = NODES[ndJ - 1][0] - NODES[ndI - 1][0];
 
 		//Difference in y-coordinates
-		float dy = NODES[ndJ - 1][1] - NODES[ndI - 1][1];
+		double dy = NODES[ndJ - 1][1] - NODES[ndI - 1][1];
 
 		//Element length and direction cosines
-		float L = pow((pow(dx, 2) + pow(dy, 2)), 0.5);
+		double L = pow((pow(dx, 2) + pow(dy, 2)), 0.5);
 
-		float c = dx / L;
-		float s = dy / L;
+		double c = dx / L;
+		double s = dy / L;
 
 		//Local-basic transformation
-		vector< vector<float> > abl;
+		vector< vector<double> > abl;
 		for (int i = 0; i < 3; i++) {
-			vector<float> temp;
+			vector<double> temp;
 			abl.push_back(temp);
 		}
 		build_local_basic_transform(abl, L);
 
 		//Global-lobal transformation
-		vector< vector<float> > alg;
+		vector< vector<double> > alg;
 		for (int i = 0; i < 6; i++) {
-			vector<float> temp(6, 0);
+			vector<double> temp(6, 0);
 			alg.push_back(temp);
 		}
 		alg[0][0] = c; alg[0][1] = s;
@@ -208,7 +208,7 @@ int main() {
 		alg[5][5] = 1;
 
 		//Select global displacements from Uf and Uc
-		vector<float> u(6, 0);
+		vector<double> u(6, 0);
 		for (int i = 0; i < 6; i++) {
 			if (l[i] > 0) {
 				u[i] = uf[l[i] - 1];
@@ -219,24 +219,24 @@ int main() {
 		}
 
 		//Local Displacements
-		vector<float> ul(6, 0);
+		vector<double> ul(6, 0);
 		ul = matrix_multiply(alg, u);
 
 		//Basic deformations
-		vector<float> ub(3, 0);
+		vector<double> ub(3, 0);
 		ub = matrix_multiply(abl, ul);
 
 		//Element properties and member loads
-		float E = ELEMS[e][2];
-		float A = ELEMS[e][3];
-		float I = ELEMS[e][4];
-		float WX = ELEMS[e][5];
-		float WY = ELEMS[e][6];
+		double E = ELEMS[e][2];
+		double A = ELEMS[e][3];
+		double I = ELEMS[e][4];
+		double WX = ELEMS[e][5];
+		double WY = ELEMS[e][6];
 
 		//Basic Stiffness
-		vector< vector<float> > kb;
+		vector< vector<double> > kb;
 		for (int i = 0; i < 3; i++) {
-			vector<float> temp;
+			vector<double> temp;
 			kb.push_back(temp);
 		}
 		kb[0].push_back(E * A / L);
@@ -250,27 +250,27 @@ int main() {
 		kb[2].push_back(4 * E * I / L);
 
 		//Local stiffness
-		vector< vector<float> > x = matrix_transpose(abl);
-		vector< vector<float> > y = matrix_multiply(kb, abl);
-		vector< vector<float> > kl = matrix_multiply(x, y);
+		vector< vector<double> > x = matrix_transpose(abl);
+		vector< vector<double> > y = matrix_multiply(kb, abl);
+		vector< vector<double> > kl = matrix_multiply(x, y);
 
 		//Global stiffness
 		x = matrix_transpose(alg);
 		y = matrix_multiply(kl, alg);
-		vector< vector<float> > k = matrix_multiply(x, y);
+		vector< vector<double> > k = matrix_multiply(x, y);
 
 		//Fixed-end basic forces
-		vector<float> pb0;
+		vector<double> pb0;
 		pb0.push_back(-WX * L / 2);
 		pb0.push_back(-WY * pow(L, 2) / 12);
 		pb0.push_back(WY * pow(L, 2) / 12);
 
 		//Basic force-deformation relationship
-		vector<float> pb = matrix_multiply(kb, ub);
+		vector<double> pb = matrix_multiply(kb, ub);
 		pb = matrix_add(pb, pb0);
 
 		//"Reactions" due to member loads
-		vector<float> plw;
+		vector<double> plw;
 		plw.push_back(-WX * L);
 		plw.push_back(-WY * L / 2);
 		plw.push_back(0);
@@ -280,12 +280,12 @@ int main() {
 
 		//Local forces
 		x = matrix_transpose(abl);
-		vector<float> pl = matrix_multiply(x, pb);
+		vector<double> pl = matrix_multiply(x, pb);
 		pl = matrix_add(pl, plw);
 
 		//Global forces
 		x = matrix_transpose(alg);
-		vector<float> p = matrix_multiply(x, pl);
+		vector<double> p = matrix_multiply(x, pl);
 
 		//Assemble Kff and Pf
 		for (int j = 0; j < 6; j++){
@@ -305,9 +305,9 @@ int main() {
 	}
 
 	//TEST
-	vector<vector<float>> test;
+	vector<vector<double>> test;
 	for (int i = 0; i < 3; i++) {
-		vector<float> temp;
+		vector<double> temp;
 		test.push_back(temp);
 	}
 	test[0].push_back(4);
@@ -320,16 +320,16 @@ int main() {
 	test[2].push_back(-43);
 	test[2].push_back(98);
 
-	/*vector<vector<float>> test2;
+	/*vector<vector<double>> test2;
 	for (int i = 0; i < 3; i++) {
-		vector<float> temp;
+		vector<double> temp;
 		temp.push_back(1);
 		temp.push_back(2);
 		temp.push_back(3);
 		test2.push_back(temp);
 	}*/
 
-	vector<float> test2;
+	vector<double> test2;
 	test2.push_back(1);
 	test2.push_back(2);
 	test2.push_back(3);
@@ -338,36 +338,51 @@ int main() {
 	* Solve for the nodal displacements Uf
 	**************************************/
 
-	vector<float> solved = cholesky_solve(kff, pf);
+	/*cout << "Kff" << endl;
+	for (int i = 0; i < kff.size(); i++) {
+		for (int j = 0; j < kff[0].size(); j++) {
+
+			printf("%f\n", kff[i][j]);
+		}
+	}
+	*/
+
+
+	if (nfdof > 0) {
+		uf = cholesky_solve(kff, pf);
+	}
+
+	debug(uf);
 
 	duration = chrono::duration_cast<chrono::microseconds>(checkpoint_start - start);
-	cout << "Kff assembled and Pf modified in " << duration.count() << " milliseconds. ";
-	printf("Doing next thing");
+	checkpoint_start = chrono::high_resolution_clock::now();
+	cout << "Kff assembled, Pf modified, and Uf solved for in " << duration.count() << " milliseconds. ";
+	printf("Assembling Pc. . .");
 
 	return 0;
 }
 
-vector<float> cholesky_solve(vector< vector<float> > &a, vector<float> &b) {
+vector<double> cholesky_solve(vector< vector<double> > &a, vector<double> &b) {
 
 	//Solve for Ax = b
-	vector< vector<float> > l = cholesky_decomp(a);
-	vector< vector<float> > u = matrix_transpose(l);
+	vector< vector<double> > l = cholesky_decomp(a);
+	vector< vector<double> > u = matrix_transpose(l);
 
-	vector<float> y = forward_sub(l, b);
-	vector<float> x = backward_sub(u, y);
+	vector<double> y = forward_sub(l, b);
+	vector<double> x = backward_sub(u, y);
 
 	return x;
 }
 
-vector<float> forward_sub(vector< vector<float> > &l, vector<float> &b) {
+vector<double> forward_sub(vector< vector<double> > &l, vector<double> &b) {
 	
-	vector<float> y(b.size(), 0);
-	float s = 0;
+	vector<double> y(b.size(), 0);
+	double s = 0;
 
 	//On a lower-triangular matrix
-	for (int i = 0; i < l.size(); i++) {
+	for (size_t i = 0; i < l.size(); i++) {
 
-		float s = b[i];
+		double s = b[i];
 
 		for (int j = 0; j < i; j++) {
 
@@ -378,16 +393,16 @@ vector<float> forward_sub(vector< vector<float> > &l, vector<float> &b) {
 	return y;
 }
 
-vector<float> backward_sub(vector< vector<float> > &u, vector<float> &y) {
+vector<double> backward_sub(vector< vector<double> > &u, vector<double> &y) {
 
-	vector<float> x(u.size(), 0);
+	vector<double> x(u.size(), 0);
 
 	//On an upper-triangular matrix
 	for (int i = u.size() -1; i >= 0; i--) {
 
-		float s = y[i];
+		double s = y[i];
 
-		for (int j = i; j < u.size(); j++) {
+		for (size_t j = i; j < u.size(); j++) {
 
 			s -= u[i][j] * x[j];
 		}
@@ -397,7 +412,7 @@ vector<float> backward_sub(vector< vector<float> > &u, vector<float> &y) {
 	return x;
 }
 
-vector< vector<float> > cholesky_decomp(vector< vector<float> > &matrix) {
+vector< vector<double> > cholesky_decomp(vector< vector<double> > &matrix) {
 
 	int rows = matrix.size();
 	int cols = matrix[0].size();
@@ -407,44 +422,45 @@ vector< vector<float> > cholesky_decomp(vector< vector<float> > &matrix) {
 		exit(1);
 	}
 
-	vector< vector<float> > lower;
+	vector< vector<double> > lower;
 	for (int i = 0; i < rows; i++) {
-		vector<float> temp(cols, 0);
+		vector<double> temp(cols, 0);
 		lower.push_back(temp);
 	}
 
 	for (int i = 0; i < rows; i++) {
 		for (int j = 0; j <= i; j++) {
-			int sum = 0;
+
+			double sum = 0;
 
 			if (j == i) // summation for diagonals 
 			{
-				for (int k = 0; k < j; k++)
+				for (int k = 0; k < j; k++) {
 					sum += pow(lower[j][k], 2);
-				lower[j][j] = sqrt(matrix[j][j] -
-					sum);
+				}
+				lower[j][j] = sqrt(matrix[j][j] - sum);
 			}
 			else {
 
 				// Evaluating L(i, j) using L(j, j) 
-				for (int k = 0; k < j; k++)
+				for (int k = 0; k < j; k++) {
 					sum += (lower[i][k] * lower[j][k]);
-				lower[i][j] = (matrix[i][j] - sum) /
-					lower[j][j];
+				}
+				lower[i][j] = (matrix[i][j] - sum) / lower[j][j];
 			}
 		}
 	}
 	return lower;
 }
 
-vector< vector<float> > matrix_transpose(vector< vector<float> > &m1) {
+vector< vector<double> > matrix_transpose(vector< vector<double> > &m1) {
 
 	int rows = m1.size();
 	int cols = m1[0].size();
 
-	vector< vector<float> > m2;
+	vector< vector<double> > m2;
 	for (int i = 0; i < cols; i++) {
-		vector<float> temp(rows, 0);
+		vector<double> temp(rows, 0);
 		m2.push_back(temp);
 	}
 
@@ -458,7 +474,7 @@ vector< vector<float> > matrix_transpose(vector< vector<float> > &m1) {
 	return m2;
 }
 
-vector< vector<float> > matrix_multiply(vector< vector<float> >& m1, vector< vector<float> >& m2) {
+vector< vector<double> > matrix_multiply(vector< vector<double> >& m1, vector< vector<double> >& m2) {
 
 	//n x k by k x m = n x m matrix
 	int rows1 = m1.size();
@@ -472,9 +488,9 @@ vector< vector<float> > matrix_multiply(vector< vector<float> >& m1, vector< vec
 		exit(1);
 	}
 
-	vector< vector<float> > m3;
+	vector< vector<double> > m3;
 	for (int i = 0; i < rows1; i++) {
-		vector<float> temp(cols2, 0);
+		vector<double> temp(cols2, 0);
 		m3.push_back(temp);
 	}
 	
@@ -489,7 +505,7 @@ vector< vector<float> > matrix_multiply(vector< vector<float> >& m1, vector< vec
 	return m3;
 }
 
-vector<float> matrix_multiply(vector< vector<float> >& m1, vector<float> &m2) {
+vector<double> matrix_multiply(vector< vector<double> >& m1, vector<double> &m2) {
 
 	
 	//n x k by k x m = n x m matrix
@@ -504,7 +520,7 @@ vector<float> matrix_multiply(vector< vector<float> >& m1, vector<float> &m2) {
 		exit(1);
 	}
 
-	vector<float> m3(rows1, 0);
+	vector<double> m3(rows1, 0);
 	
 	for (int i = 0; i < rows1; i++) {
 		for (int j = 0; j < cols2; j++) {
@@ -515,21 +531,21 @@ vector<float> matrix_multiply(vector< vector<float> >& m1, vector<float> &m2) {
 	return m3;
 }
 
-vector< vector<float> > matrix_add(vector< vector <float> >& m1, vector< vector <float> > &m2) {
+vector< vector<double> > matrix_add(vector< vector <double> >& m1, vector< vector <double> > &m2) {
 
 	if (m2.size() != m1.size()) {
 		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_add");
 		exit(1);
 	}
 
-	vector< vector<float> > m3;
-	for (int i = 0; i < m1.size(); i++) {
-		vector<float> temp(m1[0].size(), 0);
+	vector< vector<double> > m3;
+	for (size_t i = 0; i < m1.size(); i++) {
+		vector<double> temp(m1[0].size(), 0);
 		m3.push_back(temp);
 	}
 
-	for (int i = 0; i < m1.size(); i++) {
-		for (int j = 0; j < m1[0].size(); j++) {
+	for (size_t i = 0; i < m1.size(); i++) {
+		for (size_t j = 0; j < m1[0].size(); j++) {
 			m3[i][j] = m1[i][j] + m2[i][j];
 		}
 	}
@@ -537,16 +553,16 @@ vector< vector<float> > matrix_add(vector< vector <float> >& m1, vector< vector 
 	return m3;
 }
 
-vector<float> matrix_add(vector <float> &m1, vector <float> &m2) {
+vector<double> matrix_add(vector <double> &m1, vector <double> &m2) {
 
 	if (m2.size() != m1.size()) {
 		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_add");
 		exit(1);
 	}
 
-	vector<float> m3(m1.size(), 0);
+	vector<double> m3(m1.size(), 0);
 
-	for (int i = 0; i < m1.size(); i++) {
+	for (size_t i = 0; i < m1.size(); i++) {
 		m3[i] = m1[i] + m2[i];
 	}
 
@@ -554,12 +570,12 @@ vector<float> matrix_add(vector <float> &m1, vector <float> &m2) {
 }
 
 //Prints out a 2d vector for debugging purposes
-void debug (vector< vector<float> > v) {
+void debug (vector< vector<double> > v) {
 
 	printf("\n");
-	for (int i = 0; i < v.size(); i++) {
+	for (size_t i = 0; i < v.size(); i++) {
 		printf("[ ");
-		for (int j = 0; j < v[i].size(); j++) {
+		for (size_t j = 0; j < v[i].size(); j++) {
 
 			cout << v[i][j] << ", ";
 		}
@@ -571,9 +587,9 @@ void debug (vector< vector<float> > v) {
 void debug (vector< vector<int> > v) {
 
 	printf("\n");
-	for (int i = 0; i < v.size(); i++) {
+	for (size_t i = 0; i < v.size(); i++) {
 		printf("[ ");
-		for (int j = 0; j < v[i].size(); j++) {
+		for (size_t j = 0; j < v[i].size(); j++) {
 
 			cout << v[i][j] << ", ";
 		}
@@ -582,10 +598,10 @@ void debug (vector< vector<int> > v) {
 
 	return;
 }
-void debug(vector<float> v) {
+void debug(vector<double> v) {
 
 	printf("\n");
-	for (int i = 0; i < v.size(); i++) {
+	for (size_t i = 0; i < v.size(); i++) {
 		printf("[");
 		printf(" ");
 		cout << v[i] << " ]\n";
@@ -595,7 +611,7 @@ void debug(vector<float> v) {
 void debug(vector<int> v) {
 
 	printf("\n[");
-	for (int i = 0; i < v.size(); i++) {
+	for (size_t i = 0; i < v.size(); i++) {
 		printf(" ");
 		cout << v[i] << ", ";
 	}
@@ -604,7 +620,7 @@ void debug(vector<int> v) {
 }
 
 //Functions that build the input model - Change these functions to change the input model
-void build_nodes(vector< vector<float> > &NODES) {
+void build_nodes(vector< vector<double> > &NODES) {
 
 	NODES[0].push_back(0.0);
 	NODES[0].push_back(0.0);
@@ -629,7 +645,7 @@ void build_nodes(vector< vector<float> > &NODES) {
 
 	return;
 }
-void build_elems(vector< vector<float> > &ELEMS) {
+void build_elems(vector< vector<double> > &ELEMS) {
 
 	ELEMS[0].push_back(1.0);
 	ELEMS[0].push_back(2.0);
@@ -713,7 +729,7 @@ void build_elems(vector< vector<float> > &ELEMS) {
 
 	return;
 }
-void build_supports(vector< vector<float> > &SUPPORTS) {
+void build_supports(vector< vector<double> > &SUPPORTS) {
 
 	SUPPORTS[0].push_back(1.0);
 	SUPPORTS[0].push_back(1.0);
@@ -745,7 +761,7 @@ void build_supports(vector< vector<float> > &SUPPORTS) {
 
 	return;
 }
-void build_nodal_loads(vector< vector<float> > &NODALLOADS) {
+void build_nodal_loads(vector< vector<double> > &NODALLOADS) {
 
 	NODALLOADS[0].push_back(0.0);
 	NODALLOADS[0].push_back(0.0);
@@ -777,7 +793,7 @@ void build_nodal_loads(vector< vector<float> > &NODALLOADS) {
 
 	return;
 }
-void build_support_disps(vector< vector<float> > &SUPPORTDISPS) {
+void build_support_disps(vector< vector<double> > &SUPPORTDISPS) {
 
 	SUPPORTDISPS[0].push_back(0.0);
 	SUPPORTDISPS[0].push_back(0.0);
@@ -811,7 +827,7 @@ void build_support_disps(vector< vector<float> > &SUPPORTDISPS) {
 }
 
 //build the Local-basic transformation vector
-void build_local_basic_transform(vector< vector<float> > &abl, float L) {
+void build_local_basic_transform(vector< vector<double> > &abl, double L) {
 
 	abl[0].push_back(-1);
 	abl[0].push_back(0);
