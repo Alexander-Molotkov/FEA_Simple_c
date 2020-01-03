@@ -35,7 +35,7 @@ int main() {
 	auto start = chrono::high_resolution_clock::now();
 
 	//Iterates the model to make the calculation longer for benchmarking purposes
-	const int MODEL_REPETITIONS = 2;
+	const int MODEL_REPETITIONS = 100;
 
 	const int NODE_X = 2;
 	const int NODE_Y = 7 * MODEL_REPETITIONS;
@@ -71,8 +71,8 @@ int main() {
 
 	auto checkpoint = chrono::high_resolution_clock::now();
 	auto checkpoint_start = chrono::high_resolution_clock::now();
-	auto duration = chrono::duration_cast<chrono::microseconds>(checkpoint - start);
-	cout << "Input model built in " << duration.count() << " milliseconds. \n";
+	auto duration = chrono::duration_cast<chrono::seconds>(checkpoint - start);
+	cout << "Input model built in " << duration.count() << " seconds. \n";
 
 	/***************************
 	*	Assign equation numbers
@@ -293,8 +293,8 @@ int main() {
 	****************************/
 
 	checkpoint_start = chrono::high_resolution_clock::now();
-	duration = chrono::duration_cast<chrono::microseconds>(checkpoint_start - start);
-	cout << "Kff assembled, Pf modified, and Uf solved for in " << duration.count() << " milliseconds. ";
+	duration = chrono::duration_cast<chrono::seconds>(checkpoint_start - start);
+	cout << "Kff assembled, Pf modified, and Uf solved for in " << duration.count() << " seconds. ";
 
 	vector<double> pc(ncdof, 0);
 
@@ -424,8 +424,8 @@ int main() {
 		}
 	}
 
-	duration = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - checkpoint_start);
-	cout << "\nPC assembled in " << duration.count() << " milliseconds.\n";
+	duration = chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - checkpoint_start);
+	cout << "\nPC assembled in " << duration.count() << " seconds.\n";
 
 	return 0;
 }
@@ -691,32 +691,32 @@ void debug(vector<int> v) {
 vector< vector<double> > build_nodes(int sizeX, int sizeY) {
 
 	vector< vector<double> > NODES;
-	for (int i = 0; i < sizeX; i++) {
+	for (int i = 0; i < sizeY; i++) {
 		vector<double> temp;
 		NODES.push_back(temp);
 	}
 
 	for (int i = 0; i < sizeY / 7; i++){
-		NODES[0].push_back(0.0);
-		NODES[0].push_back(0.0);
+		NODES[0 + (i * 7)].push_back(0.0);
+		NODES[0 + (i * 7)].push_back(0.0);
 	
-		NODES[1].push_back(0.0);
-		NODES[1].push_back(3099.0);
+		NODES[1 + (i * 7)].push_back(0.0);
+		NODES[1 + (i * 7)].push_back(3099.0);
 	
-		NODES[2].push_back(0.0);
-		NODES[2].push_back(5892.0);
+		NODES[2 + (i * 7)].push_back(0.0);
+		NODES[2 + (i * 7)].push_back(5892.0);
 	
-		NODES[3].push_back(3048.0);
-		NODES[3].push_back(3099.0);
+		NODES[3 + (i * 7)].push_back(3048.0);
+		NODES[3 + (i * 7)].push_back(3099.0);
 	
-		NODES[4].push_back(6096.0);
-		NODES[4].push_back(0.0);
+		NODES[4 + (i * 7)].push_back(6096.0);
+		NODES[4 + (i * 7)].push_back(0.0);
 	
-		NODES[5].push_back(6096.0);
-		NODES[5].push_back(3099.0);
+		NODES[5 + (i * 7)].push_back(6096.0);
+		NODES[5 + (i * 7)].push_back(3099.0);
 	
-		NODES[6].push_back(6096.0);
-		NODES[6].push_back(5892.0);
+		NODES[6 + (i * 7)].push_back(6096.0);
+		NODES[6 + (i * 7)].push_back(5892.0);
 	}
 
 	return NODES;
@@ -724,91 +724,91 @@ vector< vector<double> > build_nodes(int sizeX, int sizeY) {
 vector< vector<double> > build_elems(int sizeX, int sizeY) {
 
 	vector< vector<double> > ELEMS;
-	for (int i = 0; i < sizeX; i++) {
+	for (int i = 0; i < sizeY; i++) {
 		vector<double> temp;
 		ELEMS.push_back(temp);
 	}
 	
 	for (int i = 0; i < sizeY / 10; i++) {
-		ELEMS[0].push_back(1.0);
-		ELEMS[0].push_back(2.0);
-		ELEMS[0].push_back(200.0);
-		ELEMS[0].push_back(10193.528);
-		ELEMS[0].push_back(126118121.95679997);
-		ELEMS[0].push_back(0.0);
-		ELEMS[0].push_back(0.0);
+		ELEMS[0 + (i * 10)].push_back(1.0);
+		ELEMS[0 + (i * 10)].push_back(2.0);
+		ELEMS[0 + (i * 10)].push_back(200.0);
+		ELEMS[0 + (i * 10)].push_back(10193.528);
+		ELEMS[0 + (i * 10)].push_back(126118121.95679997);
+		ELEMS[0 + (i * 10)].push_back(0.0);
+		ELEMS[0 + (i * 10)].push_back(0.0);
 
-		ELEMS[1].push_back(2.0);
-		ELEMS[1].push_back(3.0);
-		ELEMS[1].push_back(200.0);
-		ELEMS[1].push_back(10193.528);
-		ELEMS[1].push_back(126118121.95679997);
-		ELEMS[1].push_back(0.0);
-		ELEMS[1].push_back(0.0);
+		ELEMS[1 + (i * 10)].push_back(2.0);
+		ELEMS[1 + (i * 10)].push_back(3.0);
+		ELEMS[1 + (i * 10)].push_back(200.0);
+		ELEMS[1 + (i * 10)].push_back(10193.528);
+		ELEMS[1 + (i * 10)].push_back(126118121.95679997);
+		ELEMS[1 + (i * 10)].push_back(0.0);
+		ELEMS[1 + (i * 10)].push_back(0.0);
 
-		ELEMS[2].push_back(5.0);
-		ELEMS[2].push_back(6.0);
-		ELEMS[2].push_back(200.0);
-		ELEMS[2].push_back(10193.528);
-		ELEMS[2].push_back(42871836.83679999);
-		ELEMS[2].push_back(0.0);
-		ELEMS[2].push_back(0.0);
+		ELEMS[2 + (i * 10)].push_back(5.0);
+		ELEMS[2 + (i * 10)].push_back(6.0);
+		ELEMS[2 + (i * 10)].push_back(200.0);
+		ELEMS[2 + (i * 10)].push_back(10193.528);
+		ELEMS[2 + (i * 10)].push_back(42871836.83679999);
+		ELEMS[2 + (i * 10)].push_back(0.0);
+		ELEMS[2 + (i * 10)].push_back(0.0);
 
-		ELEMS[3].push_back(6.0);
-		ELEMS[3].push_back(7.0);
-		ELEMS[3].push_back(200.0);
-		ELEMS[3].push_back(10193.528);
-		ELEMS[3].push_back(42871836.83679999);
-		ELEMS[3].push_back(0.0);
-		ELEMS[3].push_back(0.0);
+		ELEMS[3 + (i * 10)].push_back(6.0);
+		ELEMS[3 + (i * 10)].push_back(7.0);
+		ELEMS[3 + (i * 10)].push_back(200.0);
+		ELEMS[3 + (i * 10)].push_back(10193.528);
+		ELEMS[3 + (i * 10)].push_back(42871836.83679999);
+		ELEMS[3 + (i * 10)].push_back(0.0);
+		ELEMS[3 + (i * 10)].push_back(0.0);
 
-		ELEMS[4].push_back(2.0);
-		ELEMS[4].push_back(4.0);
-		ELEMS[4].push_back(200.0);
-		ELEMS[4].push_back(10064.496);
-		ELEMS[4].push_back(225181201.24959993);
-		ELEMS[4].push_back(0.0);
-		ELEMS[4].push_back(-0.012);
+		ELEMS[4 + (i * 10)].push_back(2.0);
+		ELEMS[4 + (i * 10)].push_back(4.0);
+		ELEMS[4 + (i * 10)].push_back(200.0);
+		ELEMS[4 + (i * 10)].push_back(10064.496);
+		ELEMS[4 + (i * 10)].push_back(225181201.24959993);
+		ELEMS[4 + (i * 10)].push_back(0.0);
+		ELEMS[4 + (i * 10)].push_back(-0.012);
 
-		ELEMS[5].push_back(4.0);
-		ELEMS[5].push_back(6.0);
-		ELEMS[5].push_back(200.0);
-		ELEMS[5].push_back(10064.496);
-		ELEMS[5].push_back(225181201.24959993);
-		ELEMS[5].push_back(0.0);
-		ELEMS[5].push_back(-0.012);
+		ELEMS[5 + (i * 10)].push_back(4.0);
+		ELEMS[5 + (i * 10)].push_back(6.0);
+		ELEMS[5 + (i * 10)].push_back(200.0);
+		ELEMS[5 + (i * 10)].push_back(10064.496);
+		ELEMS[5 + (i * 10)].push_back(225181201.24959993);
+		ELEMS[5 + (i * 10)].push_back(0.0);
+		ELEMS[5 + (i * 10)].push_back(-0.012);
 
-		ELEMS[6].push_back(3.0);
-		ELEMS[6].push_back(7.0);
-		ELEMS[6].push_back(200.0);
-		ELEMS[6].push_back(10064.496);
-		ELEMS[6].push_back(225181201.24959993);
-		ELEMS[6].push_back(0.0);
-		ELEMS[6].push_back(-0.008);
+		ELEMS[6 + (i * 10)].push_back(3.0);
+		ELEMS[6 + (i * 10)].push_back(7.0);
+		ELEMS[6 + (i * 10)].push_back(200.0);
+		ELEMS[6 + (i * 10)].push_back(10064.496);
+		ELEMS[6 + (i * 10)].push_back(225181201.24959993);
+		ELEMS[6 + (i * 10)].push_back(0.0);
+		ELEMS[6 + (i * 10)].push_back(-0.008);
 
-		ELEMS[7].push_back(1.0);
-		ELEMS[7].push_back(4.0);
-		ELEMS[7].push_back(300.0);
-		ELEMS[7].push_back(3200.0);
-		ELEMS[7].push_back(0.0);
-		ELEMS[7].push_back(0.0);
-		ELEMS[7].push_back(0.0);
+		ELEMS[7 + (i * 10)].push_back(1.0);
+		ELEMS[7 + (i * 10)].push_back(4.0);
+		ELEMS[7 + (i * 10)].push_back(300.0);
+		ELEMS[7 + (i * 10)].push_back(3200.0);
+		ELEMS[7 + (i * 10)].push_back(0.0);
+		ELEMS[7 + (i * 10)].push_back(0.0);
+		ELEMS[7 + (i * 10)].push_back(0.0);
 
-		ELEMS[8].push_back(4.0);
-		ELEMS[8].push_back(5.0);
-		ELEMS[8].push_back(200.0);
-		ELEMS[8].push_back(6283.8584);
-		ELEMS[8].push_back(0.0);
-		ELEMS[8].push_back(0.0);
-		ELEMS[8].push_back(0.0);
+		ELEMS[8 + (i * 10)].push_back(4.0);
+		ELEMS[8 + (i * 10)].push_back(5.0);
+		ELEMS[8 + (i * 10)].push_back(200.0);
+		ELEMS[8 + (i * 10)].push_back(6283.8584);
+		ELEMS[8 + (i * 10)].push_back(0.0);
+		ELEMS[8 + (i * 10)].push_back(0.0);
+		ELEMS[8 + (i * 10)].push_back(0.0);
 
-		ELEMS[9].push_back(4.0);
-		ELEMS[9].push_back(7.0);
-		ELEMS[9].push_back(200.0);
-		ELEMS[9].push_back(10580.623999999998);
-		ELEMS[9].push_back(0.0);
-		ELEMS[9].push_back(0.0);
-		ELEMS[9].push_back(0.0);
+		ELEMS[9 + (i * 10)].push_back(4.0);
+		ELEMS[9 + (i * 10)].push_back(7.0);
+		ELEMS[9 + (i * 10)].push_back(200.0);
+		ELEMS[9 + (i * 10)].push_back(10580.623999999998);
+		ELEMS[9 + (i * 10)].push_back(0.0);
+		ELEMS[9 + (i * 10)].push_back(0.0);
+		ELEMS[9 + (i * 10)].push_back(0.0);
 	}
 
 	return ELEMS;
@@ -816,39 +816,39 @@ vector< vector<double> > build_elems(int sizeX, int sizeY) {
 vector< vector<double> > build_supports(int sizeX, int sizeY) {
 
 	vector< vector<double> > SUPPORTS;
-	for (int i = 0; i < sizeX; i++) {
+	for (int i = 0; i < sizeY; i++) {
 		vector<double> temp;
 		SUPPORTS.push_back(temp);
 	}
 
 	for (int i = 0; i < sizeY / 7; i++) {
-		SUPPORTS[0].push_back(1.0);
-		SUPPORTS[0].push_back(1.0);
-		SUPPORTS[0].push_back(1.0);
+		SUPPORTS[0 + (i * 7)].push_back(1.0);
+		SUPPORTS[0 + (i * 7)].push_back(1.0);
+		SUPPORTS[0 + (i * 7)].push_back(1.0);
 
-		SUPPORTS[1].push_back(0.0);
-		SUPPORTS[1].push_back(0.0);
-		SUPPORTS[1].push_back(0.0);
+		SUPPORTS[1 + (i * 7)].push_back(0.0);
+		SUPPORTS[1 + (i * 7)].push_back(0.0);
+		SUPPORTS[1 + (i * 7)].push_back(0.0);
 
-		SUPPORTS[2].push_back(0.0);
-		SUPPORTS[2].push_back(0.0);
-		SUPPORTS[2].push_back(0.0);
+		SUPPORTS[2 + (i * 7)].push_back(0.0);
+		SUPPORTS[2 + (i * 7)].push_back(0.0);
+		SUPPORTS[2 + (i * 7)].push_back(0.0);
 
-		SUPPORTS[3].push_back(0.0);
-		SUPPORTS[3].push_back(0.0);
-		SUPPORTS[3].push_back(0.0);
+		SUPPORTS[3 + (i * 7)].push_back(0.0);
+		SUPPORTS[3 + (i * 7)].push_back(0.0);
+		SUPPORTS[3 + (i * 7)].push_back(0.0);
 
-		SUPPORTS[4].push_back(1.0);
-		SUPPORTS[4].push_back(1.0);
-		SUPPORTS[4].push_back(0.0);
+		SUPPORTS[4 + (i * 7)].push_back(1.0);
+		SUPPORTS[4 + (i * 7)].push_back(1.0);
+		SUPPORTS[4 + (i * 7)].push_back(0.0);
 
-		SUPPORTS[5].push_back(0.0);
-		SUPPORTS[5].push_back(0.0);
-		SUPPORTS[5].push_back(0.0);
+		SUPPORTS[5 + (i * 7)].push_back(0.0);
+		SUPPORTS[5 + (i * 7)].push_back(0.0);
+		SUPPORTS[5 + (i * 7)].push_back(0.0);
 
-		SUPPORTS[6].push_back(0.0);
-		SUPPORTS[6].push_back(0.0);
-		SUPPORTS[6].push_back(0.0);
+		SUPPORTS[6 + (i * 7)].push_back(0.0);
+		SUPPORTS[6 + (i * 7)].push_back(0.0);
+		SUPPORTS[6 + (i * 7)].push_back(0.0);
 	}
 
 	return SUPPORTS;
@@ -856,39 +856,39 @@ vector< vector<double> > build_supports(int sizeX, int sizeY) {
 vector< vector<double> > build_nodal_loads(int sizeX, int sizeY) {
 	
 	vector< vector<double> > NODALLOADS;
-	for (int i = 0; i < sizeX; i++) {
+	for (int i = 0; i < sizeY; i++) {
 		vector<double> temp;
 		NODALLOADS.push_back(temp);
 	}
 
 	for (int i = 0; i < sizeY / 7; i++) {
-		NODALLOADS[0].push_back(0.0);
-		NODALLOADS[0].push_back(0.0);
-		NODALLOADS[0].push_back(0.0);
+		NODALLOADS[0 + (i * 7)].push_back(0.0);
+		NODALLOADS[0 + (i * 7)].push_back(0.0);
+		NODALLOADS[0 + (i * 7)].push_back(0.0);
 
-		NODALLOADS[1].push_back(0.0);
-		NODALLOADS[1].push_back(0.0);
-		NODALLOADS[1].push_back(0.0);
+		NODALLOADS[1 + (i * 7)].push_back(0.0);
+		NODALLOADS[1 + (i * 7)].push_back(0.0);
+		NODALLOADS[1 + (i * 7)].push_back(0.0);
 
-		NODALLOADS[2].push_back(0.0);
-		NODALLOADS[2].push_back(0.0);
-		NODALLOADS[2].push_back(0.0);
+		NODALLOADS[2 + (i * 7)].push_back(0.0);
+		NODALLOADS[2 + (i * 7)].push_back(0.0);
+		NODALLOADS[2 + (i * 7)].push_back(0.0);
 
-		NODALLOADS[3].push_back(0.0);
-		NODALLOADS[3].push_back(0.0);
-		NODALLOADS[3].push_back(0.0);
+		NODALLOADS[3 + (i * 7)].push_back(0.0);
+		NODALLOADS[3 + (i * 7)].push_back(0.0);
+		NODALLOADS[3 + (i * 7)].push_back(0.0);
 
-		NODALLOADS[4].push_back(0.0);
-		NODALLOADS[4].push_back(0.0);
-		NODALLOADS[4].push_back(0.0);
+		NODALLOADS[4 + (i * 7)].push_back(0.0);
+		NODALLOADS[4 + (i * 7)].push_back(0.0);
+		NODALLOADS[4 + (i * 7)].push_back(0.0);
 
-		NODALLOADS[5].push_back(200.0);
-		NODALLOADS[5].push_back(0.0);
-		NODALLOADS[5].push_back(0.0);
+		NODALLOADS[5 + (i * 7)].push_back(200.0);
+		NODALLOADS[5 + (i * 7)].push_back(0.0);
+		NODALLOADS[5 + (i * 7)].push_back(0.0);
 
-		NODALLOADS[6].push_back(200.0);
-		NODALLOADS[6].push_back(0.0);
-		NODALLOADS[6].push_back(0.0);
+		NODALLOADS[6 + (i * 7)].push_back(200.0);
+		NODALLOADS[6 + (i * 7)].push_back(0.0);
+		NODALLOADS[6 + (i * 7)].push_back(0.0);
 	}
 
 	return NODALLOADS;
@@ -896,39 +896,39 @@ vector< vector<double> > build_nodal_loads(int sizeX, int sizeY) {
 vector< vector<double> > build_support_disps(int sizeX, int sizeY) {
 
 	vector< vector<double> > SUPPORTDISPS;
-	for (int i = 0; i < sizeX; i++) {
+	for (int i = 0; i < sizeY; i++) {
 		vector<double> temp;
 		SUPPORTDISPS.push_back(temp);
 	}
 
 	for (int i = 0; i < sizeY / 7; i++) {
-		SUPPORTDISPS[0].push_back(0.0);
-		SUPPORTDISPS[0].push_back(0.0);
-		SUPPORTDISPS[0].push_back(0.0);
+		SUPPORTDISPS[0 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[0 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[0 + (i * 7)].push_back(0.0);
 
-		SUPPORTDISPS[1].push_back(0.0);
-		SUPPORTDISPS[1].push_back(0.0);
-		SUPPORTDISPS[1].push_back(0.0);
+		SUPPORTDISPS[1 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[1 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[1 + (i * 7)].push_back(0.0);
 
-		SUPPORTDISPS[2].push_back(0.0);
-		SUPPORTDISPS[2].push_back(0.0);
-		SUPPORTDISPS[2].push_back(0.0);
+		SUPPORTDISPS[2 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[2 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[2 + (i * 7)].push_back(0.0);
 
-		SUPPORTDISPS[3].push_back(0.0);
-		SUPPORTDISPS[3].push_back(0.0);
-		SUPPORTDISPS[3].push_back(0.0);
+		SUPPORTDISPS[3 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[3 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[3 + (i * 7)].push_back(0.0);
 
-		SUPPORTDISPS[4].push_back(0.0);
-		SUPPORTDISPS[4].push_back(0.0);
-		SUPPORTDISPS[4].push_back(0.0);
+		SUPPORTDISPS[4 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[4 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[4 + (i * 7)].push_back(0.0);
 
-		SUPPORTDISPS[5].push_back(0.0);
-		SUPPORTDISPS[5].push_back(0.0);
-		SUPPORTDISPS[5].push_back(0.0);
+		SUPPORTDISPS[5 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[5 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[5 + (i * 7)].push_back(0.0);
 
-		SUPPORTDISPS[6].push_back(0.0);
-		SUPPORTDISPS[6].push_back(0.0);
-		SUPPORTDISPS[6].push_back(0.0);
+		SUPPORTDISPS[6 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[6 + (i * 7)].push_back(0.0);
+		SUPPORTDISPS[6 + (i * 7)].push_back(0.0);
 	}
 
 	return SUPPORTDISPS;
