@@ -16,20 +16,25 @@ vector<double> matrix_multiply(vector< vector<double> >& m1, vector< double>& m2
 vector< vector<double> > matrix_add(vector< vector <double> >& m1, vector< vector <double> >& m2);
 vector<double> matrix_add(vector <double> & m1, vector <double> &m2);
 
-void build_nodes(int sizeX, int sizeY, vector< vector<double> > &NODES);
-void build_elems(int sizeX, int sizeY, vector< vector<double> > &ELEMS);
-void build_supports(int sizeX, int sizeY, vector< vector<double> > &SUPPORTS);
-void build_nodal_loads(int sizeX, int sizeY, vector< vector<double> > &NODALLOADS);
-void build_support_disps(int sizeX, int sizeY, vector< vector<double> > &SUPPORTDISPS);
+vector< vector<double> > build_nodes(int MODEL_REPETITONS);
+vector< vector<double> > build_elems(int MODEL_REPETITION);
+vector< vector<double> > build_supports(int MODEL_REPETITIONS);
+vector< vector<double> > build_nodal_loads(int MODEL_REPETITIONS);
+vector< vector<double> > build_support_disps(int MODEL_REPETITIONS);
 
-void build_local_basic_transform(vector< vector<double> >& abl, double L);
+void build_local_basic_transform(int MODEL_REPETITIONS, vector< vector<double> >& abl, double L);
 
 void debug(vector< vector<double> >);
 void debug(vector< vector<int> >);
 void debug(vector<int> v);
 void debug(vector<double> v);
 
+
+
 int main() {
+
+	//Repeats the base model x times for benchmarking purposes
+	int MODEL_REPETITIONS = 1;
 
 	//Start Timer
 	auto start = chrono::high_resolution_clock::now();
@@ -51,42 +56,11 @@ int main() {
 
 	printf("Calculating. . .\n");
 
-	vector< vector<double> > NODES;
-	for(int i = 0; i < NODE_Y; i++) {
-		vector<double> temp;
-		NODES.push_back(temp);
-	}
-	vector< vector<double> > ELEMS;
-	for (int i = 0; i < ELEMS_Y; i++) {
-		vector<double> temp;
-		ELEMS.push_back(temp);
-	}
-	vector< vector<double> > SUPPORTS;
-	for (int i = 0; i < SUPPORTS_Y; i++) {
-		vector<double> temp;
-		SUPPORTS.push_back(temp);
-	}
-	vector< vector<double> > NODALLOADS;
-	for (int i = 0; i < NODALLOADS_Y; i++) {
-		vector<double> temp;
-		NODALLOADS.push_back(temp);
-	}
-	vector< vector<double> > SUPPORTDISPS;
-	for (int i = 0; i < SUPPORTDISPS_Y; i++) {
-		vector<double> temp;
-		SUPPORTDISPS.push_back(temp);
-	}
-
-	build_nodes(NODES);
-	//debug(NODES);
-	build_elems(ELEMS);
-	//debug(ELEMS);
-	build_supports(SUPPORTS);
-	//debug(SUPPORTS);
-	build_nodal_loads(NODALLOADS);
-	//debug(NODALLOADS);
-	build_support_disps(SUPPORTDISPS);
-	//debug(SUPPORTDISPS);
+	vector< vector<double> > NODES = build_nodes(MODEL_REPETITIONS);
+	vector< vector<double> > ELEMS = build_elems(MODEL_REPETITIONS);
+	vector< vector<double> > SUPPORTS = build_supports(MODEL_REPETITIONS);
+	vector< vector<double> > NODALLOADS = build_nodal_loads(MODEL_REPETITIONS);
+	vector< vector<double> > SUPPORTDISPS = build_support_disps(MODEL_REPETITIONS);
 
 	/**************************************************************************
 	*Everything below this line is generic and should work for any input above
@@ -191,7 +165,7 @@ int main() {
 			vector<double> temp;
 			abl.push_back(temp);
 		}
-		build_local_basic_transform(abl, L);
+		build_local_basic_transform(MODEL_REPETITIONS, abl, L);
 
 		//Global-lobal transformation
 		vector< vector<double> > alg;
@@ -353,7 +327,7 @@ int main() {
 			vector<double> temp;
 			abl.push_back(temp);
 		}
-		build_local_basic_transform(abl, L);
+		build_local_basic_transform(MODEL_REPETITIONS, abl, L);
 
 		//Global-lobal transformation
 		vector< vector<double> > alg;
@@ -711,7 +685,13 @@ void debug(vector<int> v) {
 }
 
 //Functions that build the input model - Change these functions to change the input model
-void build_nodes(vector< vector<double> > &NODES) {
+vector< vector<double> > build_nodes(int MODEL_REPETITIONS) {
+
+	vector< vector<double> > NODES;
+	for (int i = 0; i < 7; i++) {
+		vector<double> temp;
+		NODES.push_back(temp);
+	}
 
 	NODES[0].push_back(0.0);
 	NODES[0].push_back(0.0);
@@ -734,9 +714,15 @@ void build_nodes(vector< vector<double> > &NODES) {
 	NODES[6].push_back(6096.0);
 	NODES[6].push_back(5892.0);
 
-	return;
+	return NODES;
 }
-void build_elems(vector< vector<double> > &ELEMS) {
+vector< vector<double> > build_elems(int MODEL_REPETITIONS) {
+
+	vector< vector<double> > ELEMS;
+	for (int i = 0; i < 10; i++) {
+		vector<double> temp;
+		ELEMS.push_back(temp);
+	}
 
 	ELEMS[0].push_back(1.0);
 	ELEMS[0].push_back(2.0);
@@ -818,9 +804,15 @@ void build_elems(vector< vector<double> > &ELEMS) {
 	ELEMS[9].push_back(0.0);
 	ELEMS[9].push_back(0.0);
 
-	return;
+	return ELEMS;
 }
-void build_supports(vector< vector<double> > &SUPPORTS) {
+vector< vector<double> > build_supports(int MODEL_REPETITIONS) {
+
+	vector< vector<double> > SUPPORTS;
+	for (int i = 0; i < 7; i++) {
+		vector<double> temp;
+		SUPPORTS.push_back(temp);
+	}
 
 	SUPPORTS[0].push_back(1.0);
 	SUPPORTS[0].push_back(1.0);
@@ -850,9 +842,15 @@ void build_supports(vector< vector<double> > &SUPPORTS) {
 	SUPPORTS[6].push_back(0.0);
 	SUPPORTS[6].push_back(0.0);
 
-	return;
+	return SUPPORTS;
 }
-void build_nodal_loads(vector< vector<double> > &NODALLOADS) {
+vector< vector<double> > build_nodal_loads(int MODEL_REPETITIONS){
+
+	vector< vector<double> > NODALLOADS;
+	for (int i = 0; i < 7; i++) {
+		vector<double> temp;
+		NODALLOADS.push_back(temp);
+	}
 
 	NODALLOADS[0].push_back(0.0);
 	NODALLOADS[0].push_back(0.0);
@@ -882,9 +880,15 @@ void build_nodal_loads(vector< vector<double> > &NODALLOADS) {
 	NODALLOADS[6].push_back(0.0);
 	NODALLOADS[6].push_back(0.0);
 
-	return;
+	return NODALLOADS;
 }
-void build_support_disps(vector< vector<double> > &SUPPORTDISPS) {
+vector< vector<double> > build_support_disps(int MODEL_REPETITIONS){
+
+	vector< vector<double> > SUPPORTDISPS;
+	for (int i = 0; i < 7; i++) {
+		vector<double> temp;
+		SUPPORTDISPS.push_back(temp);
+	}
 
 	SUPPORTDISPS[0].push_back(0.0);
 	SUPPORTDISPS[0].push_back(0.0);
@@ -914,11 +918,11 @@ void build_support_disps(vector< vector<double> > &SUPPORTDISPS) {
 	SUPPORTDISPS[6].push_back(0.0);
 	SUPPORTDISPS[6].push_back(0.0);
 
-	return;
+	return SUPPORTDISPS;
 }
 
 //build the Local-basic transformation vector
-void build_local_basic_transform(vector< vector<double> > &abl, double L) {
+void build_local_basic_transform(int MODEL_REPETITIONS, vector< vector<double> > &abl, double L) {
 
 	abl[0].push_back(-1);
 	abl[0].push_back(0);
