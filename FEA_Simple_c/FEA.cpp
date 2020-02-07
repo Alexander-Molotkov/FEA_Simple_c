@@ -16,13 +16,13 @@ vector<double> matrix_multiply(vector< vector<double> >& m1, vector< double>& m2
 vector< vector<double> > matrix_add(vector< vector <double> >& m1, vector< vector <double> >& m2);
 vector<double> matrix_add(vector <double> & m1, vector <double> &m2);
 
-vector< vector<double> > build_nodes(int sizeX, int sizeY);
-vector< vector<double> > build_elems(int sizeX, int sizeY);
-vector< vector<double> > build_supports(int sizeX, int sizeY);
-vector< vector<double> > build_nodal_loads(int sizeX, int sizeY);
-vector< vector<double> > build_support_disps(int sizeX, int sizeY);
+vector< vector<double> > build_nodes(int MODEL_REPETITONS);
+vector< vector<double> > build_elems(int MODEL_REPETITION);
+vector< vector<double> > build_supports(int MODEL_REPETITIONS);
+vector< vector<double> > build_nodal_loads(int MODEL_REPETITIONS);
+vector< vector<double> > build_support_disps(int MODEL_REPETITIONS);
 
-void build_local_basic_transform(vector< vector<double> >& abl, double L);
+void build_local_basic_transform(int MODEL_REPETITIONS, vector< vector<double> >& abl, double L);
 
 void debug(vector< vector<double> >);
 void debug(vector< vector<int> >);
@@ -30,6 +30,10 @@ void debug(vector<int> v);
 void debug(vector<double> v);
 
 int main() {
+
+	//Repeats the base model x times for benchmarking purposes
+	//When repeated, the model may not be accurate
+	int MODEL_REPETITIONS = 50;
 
 	//Start Timer
 	auto start = chrono::high_resolution_clock::now();
@@ -54,16 +58,12 @@ int main() {
 
 	printf("Calculating. . .\n");
 
-	vector< vector<double> > NODES = build_nodes(NODE_X, NODE_Y);
-	//debug(NODES);
-	vector< vector<double> > ELEMS = build_elems(ELEMS_X, ELEMS_Y);
-	//debug(ELEMS);
-	vector< vector<double> > SUPPORTS = build_supports(SUPPORTS_X, SUPPORTS_Y);
-	//debug(SUPPORTS);
-	vector< vector<double> > NODALLOADS = build_nodal_loads(NODALLOADS_X, NODALLOADS_Y);
-	//debug(NODALLOADS);
-	vector< vector<double> > SUPPORTDISPS = build_support_disps(SUPPORTDISPS_X, SUPPORTDISPS_Y);
-	//debug(SUPPORTDISPS);
+
+	vector< vector<double> > NODES = build_nodes(MODEL_REPETITIONS);
+	vector< vector<double> > ELEMS = build_elems(MODEL_REPETITIONS);
+	vector< vector<double> > SUPPORTS = build_supports(MODEL_REPETITIONS);
+	vector< vector<double> > NODALLOADS = build_nodal_loads(MODEL_REPETITIONS);
+	vector< vector<double> > SUPPORTDISPS = build_support_disps(MODEL_REPETITIONS);
 
 	/**************************************************************************
 	*Everything below this line is generic and should work for any input above
@@ -71,8 +71,8 @@ int main() {
 
 	auto checkpoint = chrono::high_resolution_clock::now();
 	auto checkpoint_start = chrono::high_resolution_clock::now();
-	auto duration = chrono::duration_cast<chrono::seconds>(checkpoint - start);
-	cout << "Input model built in " << duration.count() << " seconds. \n";
+	auto duration = chrono::duration_cast<chrono::milliseconds>(checkpoint - start);
+	cout << "Input model built in " << duration.count() << " milliseconds. \n";
 
 	/***************************
 	*	Assign equation numbers
@@ -82,7 +82,7 @@ int main() {
 
 	//Create equation array
 	vector< vector<double> > EQUATIONS;
-	for (int i = 0; i < NODE_Y; i++) {
+	for (int i = 0; i < NODE_Y * MODEL_REPETITIONS; i++) {
 
 		vector<double> temp(3, 0);
 		EQUATIONS.push_back(temp);
@@ -90,7 +90,7 @@ int main() {
 
 	//Positive equation numbers are assigned to unconstrained DOFs
 	//Negative equation numbers are assigned to constrained DOFs, i.e., where reactions where be developed
-	for (int i = 0; i < NODE_Y; i++) {
+	for (int i = 0; i < NODE_Y * MODEL_REPETITIONS; i++) {
 		for (int j = 0; j < 3; j++) {
 
 			if (SUPPORTS[i][j] == 0) {
@@ -113,7 +113,7 @@ int main() {
 	vector <double> pf(nfdof, 0.0000);
 	vector <double> uc(ncdof, 0.0000);
 
-	for (int i = 0; i < NODE_Y; i++) {
+	for (int i = 0; i < NODE_Y * MODEL_REPETITIONS; i++) {
 		for (int j = 0; j < 3; j++) {
 
 			if (EQUATIONS[i][j] > 0) { //Unconstrained DOF
@@ -137,7 +137,7 @@ int main() {
 	}
 
 	//Calculation
-	for (int e = 0; e < nele; e++) {
+	for (int e = 0; e < nele * MODEL_REPETITIONS; e++) {
 
 		//I and J nodes for this element
 		int ndI = (int)ELEMS[e][0];
@@ -168,7 +168,7 @@ int main() {
 			vector<double> temp;
 			abl.push_back(temp);
 		}
-		build_local_basic_transform(abl, L);
+		build_local_basic_transform(MODEL_REPETITIONS, abl, L);
 
 		//Global-lobal transformation
 		vector< vector<double> > alg;
@@ -197,6 +197,7 @@ int main() {
 		//Local Displacements
 		vector<double> ul(6, 0);
 		ul = matrix_multiply(alg, u);
+
 
 		//Basic deformations
 		vector<double> ub(3, 0);
@@ -257,6 +258,7 @@ int main() {
 		//Local forces
 		x = matrix_transpose(abl);
 		vector<double> pl = matrix_multiply(x, pb);
+
 		pl = matrix_add(pl, plw);
 
 		//Global forces
@@ -266,14 +268,17 @@ int main() {
 		//Assemble Kff and Pf
 		for (int j = 0; j < 6; j++){
 
-			if (l[j] >= 0) {
-				
-				pf[ l[j] -1 ] -= p[j];
+			for (double x = 0; x < MODEL_REPETITIONS; x++) {
 
-				for (int i = 0; i < 6; i++) {
+				if (l[j] >= 0) {
 
-					if (l[i] >= 0) {
-						kff[ l[i]-1 ][ l[j]-1 ] += k[i][j];
+					pf[(l[j] - 1) + (x * (double)16)] -= p[j];
+
+					for (int i = 0; i < 6; i++) {
+
+						if (l[i] >= 0) {
+							kff[(l[i] - 1) + (x *(double)16)][(l[j] - 1) + (x * (double)16)] += k[i][j];
+						}
 					}
 				}
 			}
@@ -293,12 +298,12 @@ int main() {
 	****************************/
 
 	checkpoint_start = chrono::high_resolution_clock::now();
-	duration = chrono::duration_cast<chrono::seconds>(checkpoint_start - start);
-	cout << "Kff assembled, Pf modified, and Uf solved for in " << duration.count() << " seconds. ";
+	duration = chrono::duration_cast<chrono::milliseconds>(checkpoint_start - start);
+	cout << "Kff assembled, Pf modified, and Uf solved for in " << duration.count() << " milliseconds. ";
 
 	vector<double> pc(ncdof, 0);
 
-	for (int e = 0; e < nele; e++) {
+	for (int e = 0; e < nele * MODEL_REPETITIONS; e++) {
 
 		//I and J nodes for this element
 		double ndI = ELEMS[e][0];
@@ -330,7 +335,7 @@ int main() {
 			vector<double> temp;
 			abl.push_back(temp);
 		}
-		build_local_basic_transform(abl, L);
+		build_local_basic_transform(MODEL_REPETITIONS, abl, L);
 
 		//Global-lobal transformation
 		vector< vector<double> > alg;
@@ -417,15 +422,18 @@ int main() {
 
 		//Assemble Pc
 		for (int j = 0; j < 6; j++) {
-			if( l[j] < 0 ){
 
-				pc[-l[j] - 1] += p[j];
+			for (int x = 0; x < MODEL_REPETITIONS; x++) {
+
+				if (l[j] < 0) {
+					pc[(-l[j] - 1) + (x * (double)5)] += p[j];
+				}
 			}
 		}
 	}
-
-	duration = chrono::duration_cast<chrono::seconds>(chrono::high_resolution_clock::now() - checkpoint_start);
-	cout << "\nPC assembled in " << duration.count() << " seconds.\n";
+  
+	duration = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - checkpoint_start);
+	cout << "\nPC assembled in " << duration.count() << " milliseconds.\n";
 
 	return 0;
 }
@@ -640,7 +648,8 @@ vector<double> matrix_add(vector <double> &m1, vector <double> &m2) {
 //Prints out a 2d vector for debugging purposes
 void debug (vector< vector<double> > v) {
 
-	printf("\n");
+	cout << endl << v.size() << "x" << v[0].size() << ":" << endl;
+
 	for (size_t i = 0; i < v.size(); i++) {
 		printf("[ ");
 		for (size_t j = 0; j < v[i].size(); j++) {
@@ -654,7 +663,8 @@ void debug (vector< vector<double> > v) {
 }
 void debug (vector< vector<int> > v) {
 
-	printf("\n");
+	cout << endl << v.size() << "x" << v[0].size() << ":" << endl;
+
 	for (size_t i = 0; i < v.size(); i++) {
 		printf("[ ");
 		for (size_t j = 0; j < v[i].size(); j++) {
@@ -668,7 +678,8 @@ void debug (vector< vector<int> > v) {
 }
 void debug(vector<double> v) {
 
-	printf("\n");
+	cout << endl << v.size() << "x0:" << endl;
+
 	for (size_t i = 0; i < v.size(); i++) {
 		printf("[");
 		printf(" ");
@@ -677,6 +688,8 @@ void debug(vector<double> v) {
 	return;
 }
 void debug(vector<int> v) {
+
+	cout << endl << v.size() << "x0:" << endl;
 
 	printf("\n[");
 	for (size_t i = 0; i < v.size(); i++) {
@@ -688,48 +701,49 @@ void debug(vector<int> v) {
 }
 
 //Functions that build the input model - Change these functions to change the input model
-vector< vector<double> > build_nodes(int sizeX, int sizeY) {
+vector< vector<double> > build_nodes(int MODEL_REPETITIONS) {
 
 	vector< vector<double> > NODES;
-	for (int i = 0; i < sizeY; i++) {
+	for (int i = 0; i < 7 * MODEL_REPETITIONS; i++) {
 		vector<double> temp;
 		NODES.push_back(temp);
 	}
 
-	for (int i = 0; i < sizeY / 7; i++){
+	for (int i = 0; i < MODEL_REPETITIONS; i++) {
 		NODES[0 + (i * 7)].push_back(0.0);
 		NODES[0 + (i * 7)].push_back(0.0);
-	
+
 		NODES[1 + (i * 7)].push_back(0.0);
 		NODES[1 + (i * 7)].push_back(3099.0);
-	
+
 		NODES[2 + (i * 7)].push_back(0.0);
 		NODES[2 + (i * 7)].push_back(5892.0);
-	
+
 		NODES[3 + (i * 7)].push_back(3048.0);
 		NODES[3 + (i * 7)].push_back(3099.0);
-	
+
 		NODES[4 + (i * 7)].push_back(6096.0);
 		NODES[4 + (i * 7)].push_back(0.0);
-	
+
 		NODES[5 + (i * 7)].push_back(6096.0);
 		NODES[5 + (i * 7)].push_back(3099.0);
-	
+
 		NODES[6 + (i * 7)].push_back(6096.0);
 		NODES[6 + (i * 7)].push_back(5892.0);
 	}
 
 	return NODES;
 }
-vector< vector<double> > build_elems(int sizeX, int sizeY) {
+vector< vector<double> > build_elems(int MODEL_REPETITIONS) {
 
 	vector< vector<double> > ELEMS;
-	for (int i = 0; i < sizeY; i++) {
+	for (int i = 0; i < 10 * MODEL_REPETITIONS; i++) {
 		vector<double> temp;
 		ELEMS.push_back(temp);
 	}
-	
-	for (int i = 0; i < sizeY / 10; i++) {
+
+	for (int i = 0; i < MODEL_REPETITIONS; i++) {
+
 		ELEMS[0 + (i * 10)].push_back(1.0);
 		ELEMS[0 + (i * 10)].push_back(2.0);
 		ELEMS[0 + (i * 10)].push_back(200.0);
@@ -813,15 +827,18 @@ vector< vector<double> > build_elems(int sizeX, int sizeY) {
 
 	return ELEMS;
 }
-vector< vector<double> > build_supports(int sizeX, int sizeY) {
+
+vector< vector<double> > build_supports(int MODEL_REPETITIONS) {
 
 	vector< vector<double> > SUPPORTS;
-	for (int i = 0; i < sizeY; i++) {
+	for (int i = 0; i < 7 * MODEL_REPETITIONS; i++) {
+
 		vector<double> temp;
 		SUPPORTS.push_back(temp);
 	}
 
-	for (int i = 0; i < sizeY / 7; i++) {
+	for (int i = 0; i < MODEL_REPETITIONS; i++) {
+
 		SUPPORTS[0 + (i * 7)].push_back(1.0);
 		SUPPORTS[0 + (i * 7)].push_back(1.0);
 		SUPPORTS[0 + (i * 7)].push_back(1.0);
@@ -853,15 +870,18 @@ vector< vector<double> > build_supports(int sizeX, int sizeY) {
 
 	return SUPPORTS;
 }
-vector< vector<double> > build_nodal_loads(int sizeX, int sizeY) {
-	
+
+vector< vector<double> > build_nodal_loads(int MODEL_REPETITIONS){
+
 	vector< vector<double> > NODALLOADS;
-	for (int i = 0; i < sizeY; i++) {
+	for (int i = 0; i < 7 * MODEL_REPETITIONS; i++) {
+
 		vector<double> temp;
 		NODALLOADS.push_back(temp);
 	}
 
-	for (int i = 0; i < sizeY / 7; i++) {
+	for (int i = 0; i < MODEL_REPETITIONS; i++) {
+
 		NODALLOADS[0 + (i * 7)].push_back(0.0);
 		NODALLOADS[0 + (i * 7)].push_back(0.0);
 		NODALLOADS[0 + (i * 7)].push_back(0.0);
@@ -893,15 +913,16 @@ vector< vector<double> > build_nodal_loads(int sizeX, int sizeY) {
 
 	return NODALLOADS;
 }
-vector< vector<double> > build_support_disps(int sizeX, int sizeY) {
+
+vector< vector<double> > build_support_disps(int MODEL_REPETITIONS) {
 
 	vector< vector<double> > SUPPORTDISPS;
-	for (int i = 0; i < sizeY; i++) {
+	for (int i = 0; i < 7 * MODEL_REPETITIONS; i++) {
 		vector<double> temp;
 		SUPPORTDISPS.push_back(temp);
 	}
 
-	for (int i = 0; i < sizeY / 7; i++) {
+	for (int i = 0; i < MODEL_REPETITIONS; i++) {
 		SUPPORTDISPS[0 + (i * 7)].push_back(0.0);
 		SUPPORTDISPS[0 + (i * 7)].push_back(0.0);
 		SUPPORTDISPS[0 + (i * 7)].push_back(0.0);
@@ -935,26 +956,26 @@ vector< vector<double> > build_support_disps(int sizeX, int sizeY) {
 }
 
 //build the Local-basic transformation vector
-void build_local_basic_transform(vector< vector<double> > &abl, double L) {
+void build_local_basic_transform(int MODEL_REPETITIONS, vector< vector<double> > &abl, double L) {
+	
+		abl[0].push_back(-1);
+		abl[0].push_back(0);
+		abl[0].push_back(0);
+		abl[0].push_back(1);
+		abl[0].push_back(0);
+		abl[0].push_back(0);
 
-	abl[0].push_back(-1);
-	abl[0].push_back(0);
-	abl[0].push_back(0);
-	abl[0].push_back(1);
-	abl[0].push_back(0);
-	abl[0].push_back(0);
+		abl[1].push_back(0);
+		abl[1].push_back(1 / L);
+		abl[1].push_back(1);
+		abl[1].push_back(0);
+		abl[1].push_back(-1 / L);
+		abl[1].push_back(0);
 
-	abl[1].push_back(0);
-	abl[1].push_back(1/L);
-	abl[1].push_back(1);
-	abl[1].push_back(0);
-	abl[1].push_back(-1/L);
-	abl[1].push_back(0);
-
-	abl[2].push_back(0);
-	abl[2].push_back(1 / L);
-	abl[2].push_back(0);
-	abl[2].push_back(0);
-	abl[2].push_back(-1 / L);
-	abl[2].push_back(1);
+		abl[2].push_back(0);
+		abl[2].push_back(1 / L);
+		abl[2].push_back(0);
+		abl[2].push_back(0);
+		abl[2].push_back(-1 / L);
+		abl[2].push_back(1);
 }
