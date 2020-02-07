@@ -33,7 +33,7 @@ int main() {
 
 	//Repeats the base model x times for benchmarking purposes
 	//When repeated, the model may not be accurate
-	int MODEL_REPETITIONS = 2;
+	int MODEL_REPETITIONS = 50;
 
 	//Start Timer
 	auto start = chrono::high_resolution_clock::now();
@@ -67,7 +67,7 @@ int main() {
 
 	auto checkpoint = chrono::high_resolution_clock::now();
 	auto checkpoint_start = chrono::high_resolution_clock::now();
-	auto duration = chrono::duration_cast<chrono::microseconds>(checkpoint - start);
+	auto duration = chrono::duration_cast<chrono::milliseconds>(checkpoint - start);
 	cout << "Input model built in " << duration.count() << " milliseconds. \n";
 
 	/***************************
@@ -294,7 +294,7 @@ int main() {
 	****************************/
 
 	checkpoint_start = chrono::high_resolution_clock::now();
-	duration = chrono::duration_cast<chrono::microseconds>(checkpoint_start - start);
+	duration = chrono::duration_cast<chrono::milliseconds>(checkpoint_start - start);
 	cout << "Kff assembled, Pf modified, and Uf solved for in " << duration.count() << " milliseconds. ";
 
 	vector<double> pc(ncdof, 0);
@@ -428,7 +428,7 @@ int main() {
 		}
 	}
 
-	duration = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - checkpoint_start);
+	duration = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - checkpoint_start);
 	cout << "\nPC assembled in " << duration.count() << " milliseconds.\n";
 
 	return 0;
