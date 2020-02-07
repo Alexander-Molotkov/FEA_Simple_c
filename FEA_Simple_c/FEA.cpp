@@ -38,22 +38,26 @@ int main() {
 	//Start Timer
 	auto start = chrono::high_resolution_clock::now();
 
+	//Iterates the model to make the calculation longer for benchmarking purposes
+	const int MODEL_REPETITIONS = 100;
+
 	const int NODE_X = 2;
-	const int NODE_Y = 7;
+	const int NODE_Y = 7 * MODEL_REPETITIONS;
 	const int ELEMS_X = 7;
-	const int ELEMS_Y = 10;
+	const int ELEMS_Y = 10 * MODEL_REPETITIONS;
 	const int SUPPORTS_X = 3;
-	const int SUPPORTS_Y = NODE_Y;
+	const int SUPPORTS_Y = NODE_Y * MODEL_REPETITIONS;
 	const int NODALLOADS_X = 3;
-	const int NODALLOADS_Y = NODE_Y;
+	const int NODALLOADS_Y = NODE_Y * MODEL_REPETITIONS;
 	const int SUPPORTDISPS_X = 3;
-	const int SUPPORTDISPS_Y = NODE_Y;
+	const int SUPPORTDISPS_Y = NODE_Y * MODEL_REPETITIONS;
 
 	/*********************************************************************
 	* The following functions are used to build the hardcoded input model
 	*********************************************************************/
 
 	printf("Calculating. . .\n");
+
 
 	vector< vector<double> > NODES = build_nodes(MODEL_REPETITIONS);
 	vector< vector<double> > ELEMS = build_elems(MODEL_REPETITIONS);
@@ -427,7 +431,7 @@ int main() {
 			}
 		}
 	}
-
+  
 	duration = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - checkpoint_start);
 	cout << "\nPC assembled in " << duration.count() << " milliseconds.\n";
 
@@ -739,6 +743,7 @@ vector< vector<double> > build_elems(int MODEL_REPETITIONS) {
 	}
 
 	for (int i = 0; i < MODEL_REPETITIONS; i++) {
+
 		ELEMS[0 + (i * 10)].push_back(1.0);
 		ELEMS[0 + (i * 10)].push_back(2.0);
 		ELEMS[0 + (i * 10)].push_back(200.0);
@@ -822,15 +827,18 @@ vector< vector<double> > build_elems(int MODEL_REPETITIONS) {
 
 	return ELEMS;
 }
+
 vector< vector<double> > build_supports(int MODEL_REPETITIONS) {
 
 	vector< vector<double> > SUPPORTS;
 	for (int i = 0; i < 7 * MODEL_REPETITIONS; i++) {
+
 		vector<double> temp;
 		SUPPORTS.push_back(temp);
 	}
 
 	for (int i = 0; i < MODEL_REPETITIONS; i++) {
+
 		SUPPORTS[0 + (i * 7)].push_back(1.0);
 		SUPPORTS[0 + (i * 7)].push_back(1.0);
 		SUPPORTS[0 + (i * 7)].push_back(1.0);
@@ -862,15 +870,18 @@ vector< vector<double> > build_supports(int MODEL_REPETITIONS) {
 
 	return SUPPORTS;
 }
+
 vector< vector<double> > build_nodal_loads(int MODEL_REPETITIONS){
 
 	vector< vector<double> > NODALLOADS;
 	for (int i = 0; i < 7 * MODEL_REPETITIONS; i++) {
+
 		vector<double> temp;
 		NODALLOADS.push_back(temp);
 	}
 
 	for (int i = 0; i < MODEL_REPETITIONS; i++) {
+
 		NODALLOADS[0 + (i * 7)].push_back(0.0);
 		NODALLOADS[0 + (i * 7)].push_back(0.0);
 		NODALLOADS[0 + (i * 7)].push_back(0.0);
@@ -902,6 +913,7 @@ vector< vector<double> > build_nodal_loads(int MODEL_REPETITIONS){
 
 	return NODALLOADS;
 }
+
 vector< vector<double> > build_support_disps(int MODEL_REPETITIONS) {
 
 	vector< vector<double> > SUPPORTDISPS;
