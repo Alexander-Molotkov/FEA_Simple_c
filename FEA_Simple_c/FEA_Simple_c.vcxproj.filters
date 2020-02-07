@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="FEA.cpp">
+    <ClCompile Include="FEA_CUDA.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
