@@ -6,15 +6,15 @@
 
 using namespace std;
 
-vector<double> cholesky_solve(vector<vector<double>> &a, vector<double>& b);
-vector<double> forward_sub(vector<vector<double>> &l, vector<double> &b);
+vector<double> cholesky_solve(vector<vector<double>>& a, vector<double>& b);
+vector<double> forward_sub(vector<vector<double>>& l, vector<double>& b);
 vector<double> backward_sub(vector<vector<double>>& u, vector<double>& y);
-vector< vector<double> > cholesky_decomp(vector< vector<double> > &m1);
+vector< vector<double> > cholesky_decomp(vector< vector<double> >& m1);
 vector< vector<double> > matrix_transpose(vector < vector<double> >& m1);
 vector<vector<double>> matrix_multiply(vector<vector<double>>& m1, vector<vector<double>>& m2);
 vector<double> matrix_multiply(vector< vector<double> >& m1, vector< double>& m2);
 vector< vector<double> > matrix_add(vector< vector <double> >& m1, vector< vector <double> >& m2);
-vector<double> matrix_add(vector <double> & m1, vector <double> &m2);
+vector<double> matrix_add(vector <double>& m1, vector <double>& m2);
 
 vector< vector<double> > build_nodes(int MODEL_REPETITONS);
 vector< vector<double> > build_elems(int MODEL_REPETITION);
@@ -33,31 +33,27 @@ int main() {
 
 	//Repeats the base model x times for benchmarking purposes
 	//When repeated, the model may not be accurate
-	int MODEL_REPETITIONS = 50;
+	int MODEL_REPETITIONS = 2;
 
 	//Start Timer
 	auto start = chrono::high_resolution_clock::now();
 
-	//Iterates the model to make the calculation longer for benchmarking purposes
-	const int MODEL_REPETITIONS = 100;
-
 	const int NODE_X = 2;
-	const int NODE_Y = 7 * MODEL_REPETITIONS;
+	const int NODE_Y = 7;
 	const int ELEMS_X = 7;
-	const int ELEMS_Y = 10 * MODEL_REPETITIONS;
+	const int ELEMS_Y = 10;
 	const int SUPPORTS_X = 3;
-	const int SUPPORTS_Y = NODE_Y * MODEL_REPETITIONS;
+	const int SUPPORTS_Y = NODE_Y;
 	const int NODALLOADS_X = 3;
-	const int NODALLOADS_Y = NODE_Y * MODEL_REPETITIONS;
+	const int NODALLOADS_Y = NODE_Y;
 	const int SUPPORTDISPS_X = 3;
-	const int SUPPORTDISPS_Y = NODE_Y * MODEL_REPETITIONS;
+	const int SUPPORTDISPS_Y = NODE_Y;
 
 	/*********************************************************************
 	* The following functions are used to build the hardcoded input model
 	*********************************************************************/
 
 	printf("Calculating. . .\n");
-
 
 	vector< vector<double> > NODES = build_nodes(MODEL_REPETITIONS);
 	vector< vector<double> > ELEMS = build_elems(MODEL_REPETITIONS);
@@ -71,13 +67,13 @@ int main() {
 
 	auto checkpoint = chrono::high_resolution_clock::now();
 	auto checkpoint_start = chrono::high_resolution_clock::now();
-	auto duration = chrono::duration_cast<chrono::milliseconds>(checkpoint - start);
+	auto duration = chrono::duration_cast<chrono::microseconds>(checkpoint - start);
 	cout << "Input model built in " << duration.count() << " milliseconds. \n";
 
 	/***************************
 	*	Assign equation numbers
 	***************************/
-	double nfdof = 0; 
+	double nfdof = 0;
 	double ncdof = 0;
 
 	//Create equation array
@@ -266,7 +262,7 @@ int main() {
 		vector<double> p = matrix_multiply(x, pl);
 
 		//Assemble Kff and Pf
-		for (int j = 0; j < 6; j++){
+		for (int j = 0; j < 6; j++) {
 
 			for (double x = 0; x < MODEL_REPETITIONS; x++) {
 
@@ -277,7 +273,7 @@ int main() {
 					for (int i = 0; i < 6; i++) {
 
 						if (l[i] >= 0) {
-							kff[(l[i] - 1) + (x *(double)16)][(l[j] - 1) + (x * (double)16)] += k[i][j];
+							kff[(l[i] - 1) + (x * (double)16)][(l[j] - 1) + (x * (double)16)] += k[i][j];
 						}
 					}
 				}
@@ -298,7 +294,7 @@ int main() {
 	****************************/
 
 	checkpoint_start = chrono::high_resolution_clock::now();
-	duration = chrono::duration_cast<chrono::milliseconds>(checkpoint_start - start);
+	duration = chrono::duration_cast<chrono::microseconds>(checkpoint_start - start);
 	cout << "Kff assembled, Pf modified, and Uf solved for in " << duration.count() << " milliseconds. ";
 
 	vector<double> pc(ncdof, 0);
@@ -310,7 +306,7 @@ int main() {
 		double ndJ = ELEMS[e][1];
 
 		//Lookup Vector
-		vector<double> l;	
+		vector<double> l;
 		l = EQUATIONS[ndI - 1];
 		l.insert(l.end(), EQUATIONS[ndJ - 1].begin(), EQUATIONS[ndJ - 1].end());
 
@@ -382,21 +378,21 @@ int main() {
 			vector<double> temp;
 			kb.push_back(temp);
 		}
-		kb[0].push_back(E* A / L);
+		kb[0].push_back(E * A / L);
 		kb[0].push_back(0);
 		kb[0].push_back(0);
 		kb[1].push_back(0);
-		kb[1].push_back(4 * E* I / L);
-		kb[1].push_back(2 * E* I / L);
+		kb[1].push_back(4 * E * I / L);
+		kb[1].push_back(2 * E * I / L);
 		kb[2].push_back(0);
-		kb[2].push_back(2 * E* I / L);
-		kb[2].push_back(4 * E* I / L);
+		kb[2].push_back(2 * E * I / L);
+		kb[2].push_back(4 * E * I / L);
 
 		//Fixed-end basic forces
 		vector<double> pb0;
 		pb0.push_back(-WX * L / 2);
 		pb0.push_back(-WY * pow(L, 2) / 12);
-		pb0.push_back(WY* pow(L, 2) / 12);
+		pb0.push_back(WY * pow(L, 2) / 12);
 
 		//Basic force-deformation relationship
 		vector<double> pb = matrix_multiply(kb, ub);
@@ -431,14 +427,14 @@ int main() {
 			}
 		}
 	}
-  
-	duration = chrono::duration_cast<chrono::milliseconds>(chrono::high_resolution_clock::now() - checkpoint_start);
+
+	duration = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - checkpoint_start);
 	cout << "\nPC assembled in " << duration.count() << " milliseconds.\n";
 
 	return 0;
 }
 
-vector<double> cholesky_solve(vector< vector<double> > &a, vector<double> &b) {
+vector<double> cholesky_solve(vector< vector<double> > & a, vector<double> & b) {
 
 	//Solve for Ax = b
 	vector< vector<double> > l = cholesky_decomp(a);
@@ -450,8 +446,8 @@ vector<double> cholesky_solve(vector< vector<double> > &a, vector<double> &b) {
 	return x;
 }
 
-vector<double> forward_sub(vector< vector<double> > &l, vector<double> &b) {
-	
+vector<double> forward_sub(vector< vector<double> > & l, vector<double> & b) {
+
 	vector<double> y(b.size(), 0);
 	double s = 0;
 
@@ -469,12 +465,12 @@ vector<double> forward_sub(vector< vector<double> > &l, vector<double> &b) {
 	return y;
 }
 
-vector<double> backward_sub(vector< vector<double> > &u, vector<double> &y) {
+vector<double> backward_sub(vector< vector<double> > & u, vector<double> & y) {
 
 	vector<double> x(u.size(), 0);
 
 	//On an upper-triangular matrix
-	for (int i = u.size() -1; i >= 0; i--) {
+	for (int i = u.size() - 1; i >= 0; i--) {
 
 		double s = y[i];
 
@@ -488,7 +484,7 @@ vector<double> backward_sub(vector< vector<double> > &u, vector<double> &y) {
 	return x;
 }
 
-vector< vector<double> > cholesky_decomp(vector< vector<double> > &matrix) {
+vector< vector<double> > cholesky_decomp(vector< vector<double> > & matrix) {
 
 	int rows = matrix.size();
 	int cols = matrix[0].size();
@@ -529,7 +525,7 @@ vector< vector<double> > cholesky_decomp(vector< vector<double> > &matrix) {
 	return lower;
 }
 
-vector< vector<double> > matrix_transpose(vector< vector<double> > &m1) {
+vector< vector<double> > matrix_transpose(vector< vector<double> > & m1) {
 
 	int rows = m1.size();
 	int cols = m1[0].size();
@@ -550,7 +546,7 @@ vector< vector<double> > matrix_transpose(vector< vector<double> > &m1) {
 	return m2;
 }
 
-vector< vector<double> > matrix_multiply(vector< vector<double> >& m1, vector< vector<double> >& m2) {
+vector< vector<double> > matrix_multiply(vector< vector<double> > & m1, vector< vector<double> > & m2) {
 
 	//n x k by k x m = n x m matrix
 	int rows1 = m1.size();
@@ -569,7 +565,7 @@ vector< vector<double> > matrix_multiply(vector< vector<double> >& m1, vector< v
 		vector<double> temp(cols2, 0);
 		m3.push_back(temp);
 	}
-	
+
 	for (int i = 0; i < rows1; i++) {
 		for (int j = 0; j < cols2; j++) {
 
@@ -581,9 +577,9 @@ vector< vector<double> > matrix_multiply(vector< vector<double> >& m1, vector< v
 	return m3;
 }
 
-vector<double> matrix_multiply(vector< vector<double> >& m1, vector<double> &m2) {
+vector<double> matrix_multiply(vector< vector<double> > & m1, vector<double> & m2) {
 
-	
+
 	//n x k by k x m = n x m matrix
 	int rows1 = m1.size();
 	int cols1 = m1[0].size();
@@ -597,17 +593,17 @@ vector<double> matrix_multiply(vector< vector<double> >& m1, vector<double> &m2)
 	}
 
 	vector<double> m3(rows1, 0);
-	
+
 	for (int i = 0; i < rows1; i++) {
 		for (int j = 0; j < cols2; j++) {
 
-				m3[i] += m1[i][j] * m2[j];
-			}
+			m3[i] += m1[i][j] * m2[j];
+		}
 	}
 	return m3;
 }
 
-vector< vector<double> > matrix_add(vector< vector <double> >& m1, vector< vector <double> > &m2) {
+vector< vector<double> > matrix_add(vector< vector <double> > & m1, vector< vector <double> > & m2) {
 
 	if (m2.size() != m1.size()) {
 		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_add");
@@ -629,7 +625,7 @@ vector< vector<double> > matrix_add(vector< vector <double> >& m1, vector< vecto
 	return m3;
 }
 
-vector<double> matrix_add(vector <double> &m1, vector <double> &m2) {
+vector<double> matrix_add(vector <double> & m1, vector <double> & m2) {
 
 	if (m2.size() != m1.size()) {
 		fprintf(stderr, "ERROR: Invalid matrix dims to matrix_add");
@@ -646,7 +642,7 @@ vector<double> matrix_add(vector <double> &m1, vector <double> &m2) {
 }
 
 //Prints out a 2d vector for debugging purposes
-void debug (vector< vector<double> > v) {
+void debug(vector< vector<double> > v) {
 
 	cout << endl << v.size() << "x" << v[0].size() << ":" << endl;
 
@@ -661,7 +657,7 @@ void debug (vector< vector<double> > v) {
 
 	return;
 }
-void debug (vector< vector<int> > v) {
+void debug(vector< vector<int> > v) {
 
 	cout << endl << v.size() << "x" << v[0].size() << ":" << endl;
 
@@ -743,7 +739,6 @@ vector< vector<double> > build_elems(int MODEL_REPETITIONS) {
 	}
 
 	for (int i = 0; i < MODEL_REPETITIONS; i++) {
-
 		ELEMS[0 + (i * 10)].push_back(1.0);
 		ELEMS[0 + (i * 10)].push_back(2.0);
 		ELEMS[0 + (i * 10)].push_back(200.0);
@@ -827,18 +822,15 @@ vector< vector<double> > build_elems(int MODEL_REPETITIONS) {
 
 	return ELEMS;
 }
-
 vector< vector<double> > build_supports(int MODEL_REPETITIONS) {
 
 	vector< vector<double> > SUPPORTS;
 	for (int i = 0; i < 7 * MODEL_REPETITIONS; i++) {
-
 		vector<double> temp;
 		SUPPORTS.push_back(temp);
 	}
 
 	for (int i = 0; i < MODEL_REPETITIONS; i++) {
-
 		SUPPORTS[0 + (i * 7)].push_back(1.0);
 		SUPPORTS[0 + (i * 7)].push_back(1.0);
 		SUPPORTS[0 + (i * 7)].push_back(1.0);
@@ -870,18 +862,15 @@ vector< vector<double> > build_supports(int MODEL_REPETITIONS) {
 
 	return SUPPORTS;
 }
-
-vector< vector<double> > build_nodal_loads(int MODEL_REPETITIONS){
+vector< vector<double> > build_nodal_loads(int MODEL_REPETITIONS) {
 
 	vector< vector<double> > NODALLOADS;
 	for (int i = 0; i < 7 * MODEL_REPETITIONS; i++) {
-
 		vector<double> temp;
 		NODALLOADS.push_back(temp);
 	}
 
 	for (int i = 0; i < MODEL_REPETITIONS; i++) {
-
 		NODALLOADS[0 + (i * 7)].push_back(0.0);
 		NODALLOADS[0 + (i * 7)].push_back(0.0);
 		NODALLOADS[0 + (i * 7)].push_back(0.0);
@@ -913,7 +902,6 @@ vector< vector<double> > build_nodal_loads(int MODEL_REPETITIONS){
 
 	return NODALLOADS;
 }
-
 vector< vector<double> > build_support_disps(int MODEL_REPETITIONS) {
 
 	vector< vector<double> > SUPPORTDISPS;
@@ -956,26 +944,26 @@ vector< vector<double> > build_support_disps(int MODEL_REPETITIONS) {
 }
 
 //build the Local-basic transformation vector
-void build_local_basic_transform(int MODEL_REPETITIONS, vector< vector<double> > &abl, double L) {
-	
-		abl[0].push_back(-1);
-		abl[0].push_back(0);
-		abl[0].push_back(0);
-		abl[0].push_back(1);
-		abl[0].push_back(0);
-		abl[0].push_back(0);
+void build_local_basic_transform(int MODEL_REPETITIONS, vector< vector<double> > & abl, double L) {
 
-		abl[1].push_back(0);
-		abl[1].push_back(1 / L);
-		abl[1].push_back(1);
-		abl[1].push_back(0);
-		abl[1].push_back(-1 / L);
-		abl[1].push_back(0);
+	abl[0].push_back(-1);
+	abl[0].push_back(0);
+	abl[0].push_back(0);
+	abl[0].push_back(1);
+	abl[0].push_back(0);
+	abl[0].push_back(0);
 
-		abl[2].push_back(0);
-		abl[2].push_back(1 / L);
-		abl[2].push_back(0);
-		abl[2].push_back(0);
-		abl[2].push_back(-1 / L);
-		abl[2].push_back(1);
+	abl[1].push_back(0);
+	abl[1].push_back(1 / L);
+	abl[1].push_back(1);
+	abl[1].push_back(0);
+	abl[1].push_back(-1 / L);
+	abl[1].push_back(0);
+
+	abl[2].push_back(0);
+	abl[2].push_back(1 / L);
+	abl[2].push_back(0);
+	abl[2].push_back(0);
+	abl[2].push_back(-1 / L);
+	abl[2].push_back(1);
 }
