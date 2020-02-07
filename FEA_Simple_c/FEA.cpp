@@ -32,7 +32,8 @@ void debug(vector<double> v);
 int main() {
 
 	//Repeats the base model x times for benchmarking purposes
-	int MODEL_REPETITIONS = 50;
+	//When repeated, the model may not be accurate
+	int MODEL_REPETITIONS = 2;
 
 	//Start Timer
 	auto start = chrono::high_resolution_clock::now();
@@ -77,7 +78,7 @@ int main() {
 
 	//Create equation array
 	vector< vector<double> > EQUATIONS;
-	for (int i = 0; i < NODE_Y; i++) {
+	for (int i = 0; i < NODE_Y * MODEL_REPETITIONS; i++) {
 
 		vector<double> temp(3, 0);
 		EQUATIONS.push_back(temp);
@@ -85,7 +86,7 @@ int main() {
 
 	//Positive equation numbers are assigned to unconstrained DOFs
 	//Negative equation numbers are assigned to constrained DOFs, i.e., where reactions where be developed
-	for (int i = 0; i < NODE_Y; i++) {
+	for (int i = 0; i < NODE_Y * MODEL_REPETITIONS; i++) {
 		for (int j = 0; j < 3; j++) {
 
 			if (SUPPORTS[i][j] == 0) {
@@ -108,7 +109,7 @@ int main() {
 	vector <double> pf(nfdof, 0.0000);
 	vector <double> uc(ncdof, 0.0000);
 
-	for (int i = 0; i < NODE_Y; i++) {
+	for (int i = 0; i < NODE_Y * MODEL_REPETITIONS; i++) {
 		for (int j = 0; j < 3; j++) {
 
 			if (EQUATIONS[i][j] > 0) { //Unconstrained DOF
@@ -132,7 +133,7 @@ int main() {
 	}
 
 	//Calculation
-	for (int e = 0; e < nele; e++) {
+	for (int e = 0; e < nele * MODEL_REPETITIONS; e++) {
 
 		//I and J nodes for this element
 		int ndI = (int)ELEMS[e][0];
@@ -193,6 +194,7 @@ int main() {
 		vector<double> ul(6, 0);
 		ul = matrix_multiply(alg, u);
 
+
 		//Basic deformations
 		vector<double> ub(3, 0);
 		ub = matrix_multiply(abl, ul);
@@ -252,6 +254,7 @@ int main() {
 		//Local forces
 		x = matrix_transpose(abl);
 		vector<double> pl = matrix_multiply(x, pb);
+
 		pl = matrix_add(pl, plw);
 
 		//Global forces
@@ -261,21 +264,22 @@ int main() {
 		//Assemble Kff and Pf
 		for (int j = 0; j < 6; j++){
 
-			if (l[j] >= 0) {
-				
-				pf[ l[j] -1 ] -= p[j];
+			for (double x = 0; x < MODEL_REPETITIONS; x++) {
 
-				for (int i = 0; i < 6; i++) {
+				if (l[j] >= 0) {
 
-					if (l[i] >= 0) {
-						kff[ l[i]-1 ][ l[j]-1 ] += k[i][j];
+					pf[(l[j] - 1) + (x * (double)16)] -= p[j];
+
+					for (int i = 0; i < 6; i++) {
+
+						if (l[i] >= 0) {
+							kff[(l[i] - 1) + (x *(double)16)][(l[j] - 1) + (x * (double)16)] += k[i][j];
+						}
 					}
 				}
 			}
 		}
 	}
-
-	debug(kff);
 
 	/**************************************
 	* Solve for the nodal displacements Uf
@@ -295,7 +299,7 @@ int main() {
 
 	vector<double> pc(ncdof, 0);
 
-	for (int e = 0; e < nele; e++) {
+	for (int e = 0; e < nele * MODEL_REPETITIONS; e++) {
 
 		//I and J nodes for this element
 		double ndI = ELEMS[e][0];
@@ -414,14 +418,15 @@ int main() {
 
 		//Assemble Pc
 		for (int j = 0; j < 6; j++) {
-			if( l[j] < 0 ){
 
-				pc[-l[j] - 1] += p[j];
+			for (int x = 0; x < MODEL_REPETITIONS; x++) {
+
+				if (l[j] < 0) {
+					pc[(-l[j] - 1) + (x * (double)5)] += p[j];
+				}
 			}
 		}
 	}
-
-	debug(pc);
 
 	duration = chrono::duration_cast<chrono::microseconds>(chrono::high_resolution_clock::now() - checkpoint_start);
 	cout << "\nPC assembled in " << duration.count() << " milliseconds.\n";
@@ -639,7 +644,8 @@ vector<double> matrix_add(vector <double> &m1, vector <double> &m2) {
 //Prints out a 2d vector for debugging purposes
 void debug (vector< vector<double> > v) {
 
-	printf("\n");
+	cout << endl << v.size() << "x" << v[0].size() << ":" << endl;
+
 	for (size_t i = 0; i < v.size(); i++) {
 		printf("[ ");
 		for (size_t j = 0; j < v[i].size(); j++) {
@@ -653,7 +659,8 @@ void debug (vector< vector<double> > v) {
 }
 void debug (vector< vector<int> > v) {
 
-	printf("\n");
+	cout << endl << v.size() << "x" << v[0].size() << ":" << endl;
+
 	for (size_t i = 0; i < v.size(); i++) {
 		printf("[ ");
 		for (size_t j = 0; j < v[i].size(); j++) {
@@ -667,7 +674,8 @@ void debug (vector< vector<int> > v) {
 }
 void debug(vector<double> v) {
 
-	printf("\n");
+	cout << endl << v.size() << "x0:" << endl;
+
 	for (size_t i = 0; i < v.size(); i++) {
 		printf("[");
 		printf(" ");
@@ -676,6 +684,8 @@ void debug(vector<double> v) {
 	return;
 }
 void debug(vector<int> v) {
+
+	cout << endl << v.size() << "x0:" << endl;
 
 	printf("\n[");
 	for (size_t i = 0; i < v.size(); i++) {
@@ -935,25 +945,25 @@ vector< vector<double> > build_support_disps(int MODEL_REPETITIONS) {
 
 //build the Local-basic transformation vector
 void build_local_basic_transform(int MODEL_REPETITIONS, vector< vector<double> > &abl, double L) {
+	
+		abl[0].push_back(-1);
+		abl[0].push_back(0);
+		abl[0].push_back(0);
+		abl[0].push_back(1);
+		abl[0].push_back(0);
+		abl[0].push_back(0);
 
-	abl[0].push_back(-1);
-	abl[0].push_back(0);
-	abl[0].push_back(0);
-	abl[0].push_back(1);
-	abl[0].push_back(0);
-	abl[0].push_back(0);
+		abl[1].push_back(0);
+		abl[1].push_back(1 / L);
+		abl[1].push_back(1);
+		abl[1].push_back(0);
+		abl[1].push_back(-1 / L);
+		abl[1].push_back(0);
 
-	abl[1].push_back(0);
-	abl[1].push_back(1/L);
-	abl[1].push_back(1);
-	abl[1].push_back(0);
-	abl[1].push_back(-1/L);
-	abl[1].push_back(0);
-
-	abl[2].push_back(0);
-	abl[2].push_back(1 / L);
-	abl[2].push_back(0);
-	abl[2].push_back(0);
-	abl[2].push_back(-1 / L);
-	abl[2].push_back(1);
+		abl[2].push_back(0);
+		abl[2].push_back(1 / L);
+		abl[2].push_back(0);
+		abl[2].push_back(0);
+		abl[2].push_back(-1 / L);
+		abl[2].push_back(1);
 }
